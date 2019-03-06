@@ -3,8 +3,9 @@
 **Created By: [@CoreyD97](https://twitter.com/CoreyD97)**
 
 *Stepper is designed to be a natural evolution of Burp Suite's Repeater tool, providing the ability to create sequences of steps and define regular expressions to extract values from responses which can then be used in subsequent steps.*
-
-![Example Step](images/example.png)
+  
+![Example Step](images/example.png)  
+*A step utilising a global variable and defining a new variable for use in later steps.*
 
 **Instructions:**
 1. Create a new sequence. Double-click the title to set a suitable name.
