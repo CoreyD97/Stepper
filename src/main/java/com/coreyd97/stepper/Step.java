@@ -29,7 +29,7 @@ public class Step implements IMessageEditorController, IStepVariableListener {
         this.variableListeners = new ArrayList<>();
         this.requestResponseListeners = new ArrayList<>();
         this.httpService = Stepper.callbacks.getHelpers().buildHttpService("MATCHHACK." + Math.random(), 1234, false);
-        this.hostname = "example.com";
+        this.hostname = "HOSTNAME";
         this.port = 443;
         this.isSSL = true;
         this.requestBody = new byte[0];
