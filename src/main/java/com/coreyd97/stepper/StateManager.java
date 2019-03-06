@@ -16,7 +16,6 @@ public class StateManager implements IStepSequenceListener, IStepListener, IStep
 
     public void saveCurrentSequences(){
         this.preferences.setSetting(Globals.PREF_STEP_SEQUENCES, this.stepper.getSequences());
-        System.out.println(this.stepper.getGsonProvider().getGson().toJson(this.preferences.getSetting(Globals.PREF_STEP_SEQUENCES)));
     }
 
     public void loadSavedSequences(){
