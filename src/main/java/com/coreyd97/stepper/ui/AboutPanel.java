@@ -187,14 +187,14 @@ public class AboutPanel extends JPanel {
         gbc.fill = GridBagConstraints.BOTH;
         gbc.gridx = 2;
         gbc.gridy = 1;
-        gbc.weightx = gbc.weighty = 0;
+        gbc.weightx = 0;
+        gbc.weighty = 0.9;
 
         innerPanel.setPreferredSize(new Dimension(900, 800));
         innerPanel.setMinimumSize(new Dimension(500, 300));
         this.add(innerPanel, gbc);
-        this.setMinimumSize(innerPanel.getSize());
 
-        gbc.weighty = 1;
+        gbc.weighty = 0.1;
         gbc.gridx = 1;
         gbc.gridy++;
         this.add(new JPanel(), gbc);
