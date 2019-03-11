@@ -142,7 +142,7 @@ public class AboutPanel extends JPanel {
             String variableInsertion = "To use a variable in a request after it has been defined, either use the " +
                     "option in the context menu to copy the parameter to the clipboard, or manually insert it by " +
                     "including it as below:\n";
-            String variableExample = "<STEPVAR>VARIABLE_IDENTIFIER</STEPVAR>\n";
+            String variableExample = "$VAR:VARIABLE_IDENTIFIER$\n";
 
 
 //            aboutContent.getDocument().insertString(aboutContent.getText().length(), intro, italics);
