@@ -5,11 +5,11 @@
 *Stepper is designed to be a natural evolution of Burp Suite's Repeater tool, providing the ability to create sequences of steps and define regular expressions to extract values from responses which can then be used in subsequent steps.*
   
 ![Example Step](images/step1.png)  
-*A step utilising a global variable and defining a new variable for use in later steps.*
-
+*A step utilising a variable and defining a new variable for use in later steps.*
+  
 ![Combining with Hackvertor](images/step2.png)
 *Using Hackvertor tags with stepper for additional functionality.*
-
+  
 ![Replacement Preview Tab](images/with-replacements.png)
 *Previewing message with replacements to be utilised*
 
