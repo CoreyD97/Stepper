@@ -12,8 +12,8 @@ public class StepVariable {
     Pattern regex = null;
     String regexString = null;
     String latestValue;
-    static String variablePrepend = "<STEPVAR>";
-    static String variableAppend = "</STEPVAR>";
+    static String variablePrepend = "$VAR:";
+    static String variableAppend = "$";
 
     private ArrayList<IStepVariableListener> listeners;
 
@@ -111,6 +111,10 @@ public class StepVariable {
 
     public Pattern createIdentifierPattern(){
         return StepVariable.createIdentifierPattern(this);
+    }
+
+    public static Pattern createIdentifierCaptureRegex(){
+        return Pattern.compile(Pattern.quote(variablePrepend) + "(.*?)" + Pattern.quote(variableAppend));
     }
 
     public static String createVariableString(String identifier){

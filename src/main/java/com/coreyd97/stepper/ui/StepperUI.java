@@ -92,6 +92,7 @@ public class StepperUI implements ITab, IStepSequenceListener {
     }
 
     public StepSequenceTab getSelectedStepSet(){
+        if(!getUiComponent().isVisible()) return null;
         Component selectedStepSet = this.tabbedPane.getSelectedComponent();
         if(selectedStepSet instanceof StepSequenceTab)
             return (StepSequenceTab) selectedStepSet;

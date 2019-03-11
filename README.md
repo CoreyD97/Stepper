@@ -4,8 +4,14 @@
 
 *Stepper is designed to be a natural evolution of Burp Suite's Repeater tool, providing the ability to create sequences of steps and define regular expressions to extract values from responses which can then be used in subsequent steps.*
   
-![Example Step](images/example.png)  
+![Example Step](images/step1.png)  
 *A step utilising a global variable and defining a new variable for use in later steps.*
+
+![Combining with Hackvertor](images/step2.png)
+*Using Hackvertor tags with stepper for additional functionality.*
+
+![Replacement Preview Tab](images/with-replacements.png)
+*Previewing message with replacements to be utilised*
 
 **Instructions:**
 1. Create a new sequence. Double-click the title to set a suitable name.
@@ -41,7 +47,7 @@ Expression: (?:Goodbye|Hello) (World)!, Result: World
 **Variable Usage:**  
 To use a variable in a request after it has been defined, either use the option in the context menu to copy the parameter to the clipboard, or manually insert it by including it as below:
 
-*\<STEPVAR>VARIABLE_IDENTIFIER\</STEPVAR>*
+<b>$VAR:</b>VARIABLE_IDENTIFIER<b>$</b>
 
 
 **Future Plans:**  

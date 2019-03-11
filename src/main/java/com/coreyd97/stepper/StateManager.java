@@ -1,10 +1,11 @@
 package com.coreyd97.stepper;
 
+import burp.IExtensionStateListener;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 
 import java.util.ArrayList;
 
-public class StateManager implements IStepSequenceListener, IStepListener, IStepVariableListener {
+public class StateManager implements IStepSequenceListener, IStepListener, IStepVariableListener, IExtensionStateListener {
 
     private Stepper stepper;
     private Preferences preferences;
@@ -66,6 +67,11 @@ public class StateManager implements IStepSequenceListener, IStepListener, IStep
 
     @Override
     public void onVariableChange(StepVariable variable, StepVariable.ChangeType origin) {
+        saveCurrentSequences();
+    }
+
+    @Override
+    public void extensionUnloaded() {
         saveCurrentSequences();
     }
 }

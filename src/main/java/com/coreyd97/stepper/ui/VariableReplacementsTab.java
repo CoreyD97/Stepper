@@ -56,6 +56,9 @@ public class VariableReplacementsTab implements IMessageEditorTab {//, IStepList
         }
 
         textArea.setEditable(false);
+        textArea.setText("Due to an unknown bug, the method to set the content of this tab does not update " +
+                "when content is pasted into the raw tab with no other modifications made. " +
+                "Simply click to another tab and back to display the correct content.");
     }
 
     void setActualController(Step controller){
@@ -64,17 +67,17 @@ public class VariableReplacementsTab implements IMessageEditorTab {//, IStepList
 
     @Override
     public String getTabCaption() {
-        return "With Replacements";
+        return "Stepper Replacements";
     }
 
     @Override
-    public Component getUiComponent() {
+    public  Component getUiComponent() {
         return this.scrollPane;
     }
 
     @Override
     public boolean isEnabled(byte[] content, boolean isRequest) {
-        return this.actualController != null && isRequest;
+        return isRequest;
     }
 
     @Override
@@ -107,7 +110,16 @@ public class VariableReplacementsTab implements IMessageEditorTab {//, IStepList
             this.textArea.setText("");
             return;
         }
-        HashMap<String, StepVariable> variables = this.actualController.getRollingVariables();
+        HashMap<String, StepVariable> variables;
+        if(this.actualController != null){
+            variables = this.actualController.getRollingVariables();
+        }else{
+            variables = new HashMap<>();
+            for (StepSequence sequence : Stepper.getInstance().getSequences()) {
+                variables.putAll(sequence.getAllVariables());
+            }
+        }
+
         String contentString = new String(content);
         try {
             replaceAndHighlight(contentString, new ArrayList<>(variables.values()));
@@ -122,7 +134,7 @@ public class VariableReplacementsTab implements IMessageEditorTab {//, IStepList
      * Custom find and replace to identify and highlight regions where replaced.
      */
     private void replaceAndHighlight(String content, ArrayList<StepVariable> variables) throws BadLocationException {
-        StringBuffer output = new StringBuffer();
+        StringBuffer output;
         String contentToSearch = content;
         ArrayList<Integer[]> highlightRanges = new ArrayList<>(); // [ Offset , Length ]
         for (StepVariable stepVariable : variables) {
@@ -130,12 +142,16 @@ public class VariableReplacementsTab implements IMessageEditorTab {//, IStepList
             Pattern pattern = stepVariable.createIdentifierPattern();
             String replacement = stepVariable.getLatestValue() != null ? stepVariable.getLatestValue() : "";
             Matcher m = pattern.matcher(contentToSearch);
+            int replacementCount = 0;
             while(m.find()){
                 m.appendReplacement(output, replacement);
-                int foundOffset = m.start();
+                //Offset also takes into account previous found instances that had been replaced.
+                int foundOffset = m.start() + (replacementCount * (replacement.length() - m.group().length()));
                 //Below we use offset after appending to get the length of the unescaped
                 //value appended to the output.
-                int foundLength = output.length()-foundOffset;
+                int foundLength = Math.abs(output.length()-foundOffset);
+
+                replacementCount++;
 
                 //Shift the existing ranges to accomodate the replacement.
                 for (Integer[] range : highlightRanges) {
@@ -170,32 +186,4 @@ public class VariableReplacementsTab implements IMessageEditorTab {//, IStepList
         }
         document.insertString(currentOffset, output.substring(currentOffset, output.length()), defaultStyle);
     }
-
-
-//    @Override
-//    public void onStepAdded(Step step) {
-//        //Add listener for changes to the steps' variables
-//        step.addVariableListener(this);
-//    }
-//
-//    @Override
-//    public void onStepRemoved(Step step) {
-//        step.removeVariableListener(this);
-//    }
-//
-//
-//    @Override
-//    public void onVariableAdded(StepVariable variable) {
-//        variable.addVariableListener(this);
-//    }
-//
-//    @Override
-//    public void onVariableRemoved(StepVariable variable) {
-//        variable.removeVariableListener(this);
-//    }
-//
-//    @Override
-//    public void onVariableChange(StepVariable variable, String origin) {
-//        updateMessageWithReplacements();
-//    }
 }

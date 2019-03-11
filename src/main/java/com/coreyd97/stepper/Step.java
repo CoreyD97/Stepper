@@ -119,27 +119,7 @@ public class Step implements IMessageEditorController, IStepVariableListener {
 
     public void executeStep(HashMap<String, StepVariable> replacements) {
         byte[] requestWithoutReplacements = getRequest();
-        byte[] request = Arrays.copyOf(requestWithoutReplacements, requestWithoutReplacements.length);
-        if(request == null) return;
-        if(replacements != null) {
-            //Apply replacements.
-            String requestString = new String(request);
-            for (StepVariable replacement : replacements.values()) {
-                //Find identifier in requestBody and replace with latest value.
-                if(replacement.getLatestValue() != null) {
-                    Matcher m = StepVariable.createIdentifierPattern(replacement).matcher(requestString);
-                    requestString = m.replaceAll(replacement.getLatestValue());
-                }
-            }
-            request = requestString.getBytes();
-        }
-
-        //Analyse the request with replacements to identify the headers and body
-        IRequestInfo requestInfo = Stepper.callbacks.getHelpers().analyzeRequest(request);
-        byte[] requestBody = Arrays.copyOfRange(request, requestInfo.getBodyOffset(), request.length);
-
-        //Built request
-        byte[] builtRequest = Stepper.callbacks.getHelpers().buildHttpMessage(requestInfo.getHeaders(), requestBody);
+        byte[] builtRequest = MessageProcessor.makeReplacements(requestWithoutReplacements, replacements);
 
         //TODO Update the displayed request with the content-length header which was sent to the server.
 

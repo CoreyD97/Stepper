@@ -54,36 +54,46 @@ public class ContextMenuFactory implements IContextMenuFactory {
         menuItems.add(addStepMenu);
 
         if(invocation.getInvocationContext() == IContextMenuInvocation.CONTEXT_MESSAGE_EDITOR_REQUEST){
+            HashMap<String, StepVariable> usableVariables = null;
+
             StepSequenceTab selectedStepSet = stepper.getUI().getSelectedStepSet();
             if(selectedStepSet != null){
                 StepPanel selectedStepPanel = selectedStepSet.getSelectedStepPanel();
                 if(selectedStepPanel != null){
                     Step step = selectedStepPanel.getStep();
-                    HashMap<String, StepVariable> availableVariables = selectedStepSet.getStepSequence().getRollingVariables(step);
-                    if(availableVariables.size() > 0) {
-                        JMenu addStepVariableMenu = new JMenu("Add Stepper Variable To Clipboard");
-                        JMenu insertVariable = new JMenu("Insert Stepper Variable At Cursor");
-                        availableVariables.forEach((identifier, variable) -> {
-                            JMenuItem variableEntry = new JMenuItem(identifier);
-                            variableEntry.addActionListener(actionEvent -> {
-                                Toolkit.getDefaultToolkit().getSystemClipboard().setContents(
-                                        new StringSelection(variable.createVariableString()), null);
-                            });
-                            addStepVariableMenu.add(variableEntry);
-
-                            variableEntry = new JMenuItem(identifier);
-                            variableEntry.addActionListener(actionEvent -> {
-                                Object source = invocation.getInputEvent().getSource();
-                                if(source instanceof JComponent){
-                                    System.out.println(((JTextComponent) source).getText());
-                                }
-                            });
-                            insertVariable.add(variableEntry);
-                        });
-                        menuItems.add(addStepVariableMenu);
-                        menuItems.add(insertVariable);
-                    }
+                    usableVariables = selectedStepSet.getStepSequence().getRollingVariables(step);
                 }
+            }else{
+                //Message editor of another tool. Show all variables!
+                usableVariables = new HashMap<>();
+                for (StepSequence sequence : stepper.getSequences()) {
+                    usableVariables.putAll(sequence.getAllVariables());
+                }
+            }
+
+            if(usableVariables != null && usableVariables.size() > 0) {
+                JMenu addStepVariableMenu = new JMenu("Add Stepper Variable To Clipboard");
+                JMenu insertVariable = new JMenu("Insert Stepper Variable At Cursor (NOT IMPLEMENTED)");
+                usableVariables.forEach((identifier, variable) -> {
+                    JMenuItem variableEntry = new JMenuItem(identifier);
+                    variableEntry.addActionListener(actionEvent -> {
+                        Toolkit.getDefaultToolkit().getSystemClipboard().setContents(
+                                new StringSelection(variable.createVariableString()), null);
+                    });
+                    addStepVariableMenu.add(variableEntry);
+
+                    variableEntry = new JMenuItem(identifier);
+                    variableEntry.addActionListener(actionEvent -> {
+                        Object source = invocation.getInputEvent().getSource();
+                        if(source instanceof JComponent){
+                            System.out.println(((JTextComponent) source).getText());
+                        }
+                    });
+                    insertVariable.add(variableEntry);
+                });
+                menuItems.add(addStepVariableMenu);
+                //Not implemented yet.
+                //menuItems.add(insertVariable);
             }
         }
         return menuItems;

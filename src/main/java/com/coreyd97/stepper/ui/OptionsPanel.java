@@ -2,6 +2,7 @@ package com.coreyd97.stepper.ui;
 
 import com.coreyd97.BurpExtenderUtilities.PanelBuilder;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
+import com.coreyd97.stepper.Globals;
 import com.coreyd97.stepper.Stepper;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -28,6 +29,42 @@ public class OptionsPanel extends JPanel {
 
     private void buildPanel() {
         PanelBuilder panelBuilder = new PanelBuilder(preferences);
+
+        PanelBuilder.ComponentGroup toolEnabledGroup = panelBuilder.createComponentGroup("Allow Variables Usage");
+        JCheckBox allToolsCheckbox = (JCheckBox) toolEnabledGroup.addSetting(Globals.PREF_VARS_IN_ALL_TOOLS, "All Tools");
+        JCheckBox proxyCheckbox = (JCheckBox) toolEnabledGroup.addSetting(Globals.PREF_VARS_IN_PROXY, "Proxy");
+        JCheckBox repeaterCheckbox = (JCheckBox) toolEnabledGroup.addSetting(Globals.PREF_VARS_IN_REPEATER, "Repeater");
+        JCheckBox intruderCheckbox = (JCheckBox) toolEnabledGroup.addSetting(Globals.PREF_VARS_IN_INTRUDER, "Intruder");
+        JCheckBox spiderCheckbox = (JCheckBox) toolEnabledGroup.addSetting(Globals.PREF_VARS_IN_SPIDER, "Spider");
+        JCheckBox scannerCheckbox = (JCheckBox) toolEnabledGroup.addSetting(Globals.PREF_VARS_IN_SCANNER, "Scanner");
+        JCheckBox sequencerCheckbox = (JCheckBox) toolEnabledGroup.addSetting(Globals.PREF_VARS_IN_SEQUENCER, "Sequencer");
+        JCheckBox extenderCheckbox = (JCheckBox) toolEnabledGroup.addSetting(Globals.PREF_VARS_IN_EXTENDER, "Extender");
+
+        { //Set initial states
+            boolean individualEnabled = !allToolsCheckbox.isSelected();
+            proxyCheckbox.setEnabled(individualEnabled);
+            repeaterCheckbox.setEnabled(individualEnabled);
+            intruderCheckbox.setEnabled(individualEnabled);
+            spiderCheckbox.setEnabled(individualEnabled);
+            scannerCheckbox.setEnabled(individualEnabled);
+            sequencerCheckbox.setEnabled(individualEnabled);
+            extenderCheckbox.setEnabled(individualEnabled);
+        }
+
+        allToolsCheckbox.addChangeListener(changeEvent -> {
+            boolean individualEnabled = !allToolsCheckbox.isSelected();
+            proxyCheckbox.setEnabled(individualEnabled);
+            repeaterCheckbox.setEnabled(individualEnabled);
+            intruderCheckbox.setEnabled(individualEnabled);
+            spiderCheckbox.setEnabled(individualEnabled);
+            scannerCheckbox.setEnabled(individualEnabled);
+            sequencerCheckbox.setEnabled(individualEnabled);
+            extenderCheckbox.setEnabled(individualEnabled);
+        });
+
+        GridBagConstraints constraints = toolEnabledGroup.generateNextConstraints();
+        toolEnabledGroup.add(Box.createHorizontalStrut(175), constraints);
+
         PanelBuilder.ComponentGroup importGroup = panelBuilder.createComponentGroup("Import Sequences");
         importGroup.addButton("Import Sequences From File", actionEvent -> {
             JFileChooser fileChooser = new JFileChooser();
@@ -105,7 +142,9 @@ public class OptionsPanel extends JPanel {
 
         JPanel builtPanel = null;
         try {
-            builtPanel = panelBuilder.build(new JComponent[][]{new JComponent[]{importGroup, exportGroup}}, PanelBuilder.Alignment.TOPMIDDLE);
+            builtPanel = panelBuilder.build(new JComponent[][]{new JComponent[]{toolEnabledGroup, importGroup},
+                                                                new JComponent[]{toolEnabledGroup, exportGroup}},
+                                            PanelBuilder.Alignment.TOPMIDDLE);
         } catch (Exception e) {
             builtPanel = new JPanel();
             builtPanel.add(new JLabel("Could not build the preferences panel!"));

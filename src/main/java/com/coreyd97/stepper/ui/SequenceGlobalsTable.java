@@ -23,6 +23,8 @@ public class SequenceGlobalsTable extends JTable implements IStepVariableListene
         int fontHeight = metrics.getHeight();
         this.setRowHeight( fontHeight + 5 );
 
+        this.putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
+
         this.sequenceGlobals.addVariableListener(this);
     }
 

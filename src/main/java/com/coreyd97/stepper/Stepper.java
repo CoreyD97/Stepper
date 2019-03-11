@@ -13,19 +13,22 @@ import com.coreyd97.stepper.ui.VariableReplacementsTabFactory;
 import javax.swing.*;
 import java.util.ArrayList;
 
-public class Stepper implements IBurpExtender, IExtensionStateListener {
+public class Stepper implements IBurpExtender {
 
     public static IBurpExtenderCallbacks callbacks;
+    public static Stepper instance;
     //Vars
     private final ArrayList<StepSequence> stepSequences;
     private final ArrayList<IStepSequenceListener> stepSequenceListeners;
     private final IGsonProvider gsonProvider;
 
     private StepperUI ui;
-    private Preferences prefs;
+    private Preferences preferences;
     private StateManager stateManager;
+    private MessageProcessor messageProcessor;
 
     public Stepper(){
+        Stepper.instance = this;
         this.gsonProvider = new DefaultGsonProvider();
         this.gsonProvider.registerTypeAdapter(new TypeToken<StepSequence>(){}.getType(), new StepSequenceSerializer(this));
         this.gsonProvider.registerTypeAdapter(new TypeToken<SequenceGlobals>(){}.getType(), new SequenceGlobalsSerializer());
@@ -44,21 +47,27 @@ public class Stepper implements IBurpExtender, IExtensionStateListener {
         }
     }
 
+    public static Stepper getInstance() {
+        return instance;
+    }
 
     @Override
     public void registerExtenderCallbacks(IBurpExtenderCallbacks callbacks) {
         Stepper.callbacks = callbacks;
-        this.prefs = new Preferences(this.gsonProvider, callbacks);
+        this.preferences = new Preferences(this.gsonProvider, callbacks);
         configurePreferences();
-        this.stateManager = new StateManager(this, this.prefs);
+        this.stateManager = new StateManager(this, this.preferences);
         this.addStepSequenceListener(this.stateManager);
+        this.messageProcessor = new MessageProcessor(this, this.preferences);
 
         SwingUtilities.invokeLater(() -> {
             ui = new StepperUI(this);
             Stepper.callbacks.addSuiteTab(Stepper.this.ui);
             Stepper.callbacks.registerMessageEditorTabFactory(new VariableReplacementsTabFactory(this));
             Stepper.callbacks.registerContextMenuFactory(new ContextMenuFactory(Stepper.this));
-            Stepper.callbacks.registerExtensionStateListener(Stepper.this);
+            Stepper.callbacks.registerExtensionStateListener(Stepper.this.stateManager);
+            Stepper.callbacks.registerHttpListener(Stepper.this.messageProcessor);
+            Stepper.callbacks.registerProxyListener(Stepper.this.messageProcessor);
 
             this.stateManager.loadSavedSequences();
 
@@ -70,12 +79,20 @@ public class Stepper implements IBurpExtender, IExtensionStateListener {
     }
 
     private void configurePreferences(){
-        prefs.addSetting(Globals.PREF_STEP_SEQUENCES, new TypeToken<ArrayList<StepSequence>>(){}.getType());
-        prefs.addSetting(Globals.PREF_PREV_VERSION, Double.class, Globals.version);
+        preferences.addSetting(Globals.PREF_STEP_SEQUENCES, new TypeToken<ArrayList<StepSequence>>(){}.getType());
+        preferences.addSetting(Globals.PREF_PREV_VERSION, Double.class, Globals.version);
+        preferences.addSetting(Globals.PREF_VARS_IN_ALL_TOOLS, Boolean.class, true);
+        preferences.addSetting(Globals.PREF_VARS_IN_EXTENDER, Boolean.class, true);
+        preferences.addSetting(Globals.PREF_VARS_IN_SEQUENCER, Boolean.class, true);
+        preferences.addSetting(Globals.PREF_VARS_IN_REPEATER, Boolean.class, true);
+        preferences.addSetting(Globals.PREF_VARS_IN_PROXY, Boolean.class, true);
+        preferences.addSetting(Globals.PREF_VARS_IN_INTRUDER, Boolean.class, true);
+        preferences.addSetting(Globals.PREF_VARS_IN_SPIDER, Boolean.class, true);
+        preferences.addSetting(Globals.PREF_VARS_IN_SCANNER, Boolean.class, true);
     }
 
     public Preferences getPreferences() {
-        return prefs;
+        return preferences;
     }
 
     public StepperUI getUI() {
@@ -118,10 +135,5 @@ public class Stepper implements IBurpExtender, IExtensionStateListener {
 
     public IGsonProvider getGsonProvider() {
         return gsonProvider;
-    }
-
-    @Override
-    public void extensionUnloaded() {
-        this.stateManager.saveCurrentSequences();
     }
 }

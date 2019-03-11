@@ -25,6 +25,8 @@ public class VariableTable extends JTable implements IStepVariableListener {
         int fontHeight = metrics.getHeight();
         this.setRowHeight( fontHeight + 10 );
 
+        this.putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
+
         //Watch the step for any added/removed variables. Will also subscribe to existing.
         this.step.addVariableListener(this);
 
