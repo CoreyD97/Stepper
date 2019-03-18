@@ -22,6 +22,7 @@ public class VariableReplacementsTab implements IMessageEditorTab {//, IStepList
     private final JScrollPane scrollPane;
     private final JTextPane textArea;
     private final StyledDocument document;
+    private final boolean isEditable;
 
     private Step actualController;
     private byte[] rawRequest;
@@ -29,6 +30,7 @@ public class VariableReplacementsTab implements IMessageEditorTab {//, IStepList
     public VariableReplacementsTab(IMessageEditorController controller, boolean isEditable){
         super();
         this.controller = controller;
+        this.isEditable = isEditable;
 
         //Setup text area
         this.textArea = new WrappedTextPane();
@@ -77,7 +79,7 @@ public class VariableReplacementsTab implements IMessageEditorTab {//, IStepList
 
     @Override
     public boolean isEnabled(byte[] content, boolean isRequest) {
-        return isRequest;
+        return isRequest && this.isEditable;
     }
 
     @Override
