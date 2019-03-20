@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class MessageProcessor implements IHttpListener, IProxyListener {
+public class MessageProcessor implements IHttpListener {
 
     private final Stepper stepper;
     private final Preferences preferences;
@@ -26,27 +26,16 @@ public class MessageProcessor implements IHttpListener, IProxyListener {
 
     @Override
     public void processHttpMessage(int toolFlag, boolean messageIsRequest, IHttpRequestResponse messageInfo) {
-        if(isValidTool(toolFlag)){
+        if(isValidTool(toolFlag) && messageIsRequest){
             HashMap<String, StepVariable> allVariables = new HashMap<>();
             for (StepSequence sequence : stepper.getSequences()) {
                 allVariables.putAll(sequence.getAllVariables());
             }
 
             byte[] newRequest = makeReplacements(messageInfo.getRequest(), allVariables);
-            messageInfo.setRequest(newRequest);
-        }
-    }
-
-    @Override
-    public void processProxyMessage(boolean messageIsRequest, IInterceptedProxyMessage message) {
-        if((Boolean) preferences.getSetting(Globals.PREF_VARS_IN_PROXY) && messageIsRequest){
-            HashMap<String, StepVariable> allVariables = new HashMap<>();
-            for (StepSequence sequence : stepper.getSequences()) {
-                allVariables.putAll(sequence.getAllVariables());
-            }
-
-            byte[] newRequest = makeReplacements(message.getMessageInfo().getRequest(), allVariables);
-            message.getMessageInfo().setRequest(newRequest);
+            try {
+                messageInfo.setRequest(newRequest);
+            }catch (UnsupportedOperationException e){ /**Read-only message**/}
         }
     }
 

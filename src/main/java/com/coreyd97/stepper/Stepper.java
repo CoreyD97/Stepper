@@ -67,7 +67,6 @@ public class Stepper implements IBurpExtender {
             Stepper.callbacks.registerContextMenuFactory(new ContextMenuFactory(Stepper.this));
             Stepper.callbacks.registerExtensionStateListener(Stepper.this.stateManager);
             Stepper.callbacks.registerHttpListener(Stepper.this.messageProcessor);
-            Stepper.callbacks.registerProxyListener(Stepper.this.messageProcessor);
 
             this.stateManager.loadSavedSequences();
 
