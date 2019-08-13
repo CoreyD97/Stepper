@@ -122,6 +122,7 @@ public class Step implements IMessageEditorController, IStepVariableListener {
         byte[] builtRequest = MessageProcessor.makeReplacements(requestWithoutReplacements, replacements);
 
         //TODO Update the displayed request with the content-length header which was sent to the server.
+        setResponseBody(new byte[0]);
 
         //Update the httpService
         //Part of hack to match VariableReplacementTab with actual IMessageEditorController
