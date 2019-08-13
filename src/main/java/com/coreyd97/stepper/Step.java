@@ -24,16 +24,30 @@ public class Step implements IMessageEditorController, IStepVariableListener {
     private byte[] responseBody;
 
     public Step(){
-        this.title = "Unnamed Step";
         this.variables = new Vector<>();
         this.variableListeners = new ArrayList<>();
         this.requestResponseListeners = new ArrayList<>();
-        this.httpService = Stepper.callbacks.getHelpers().buildHttpService("MATCHHACK." + Math.random(), 1234, false);
+        this.requestBody = new byte[0];
+        this.responseBody = new byte[0];
+    }
+
+    public Step(StepSequence sequence, String title){
+        this();
+        this.sequence = sequence;
+        if(title != null) {
+            this.title = title;
+        }else{
+            this.title = "Step " + (sequence.getSteps().size()+1);
+        }
+
+        this.httpService = Stepper.callbacks.getHelpers().buildHttpService("MATCHHACK." + Math.random() + ".coreyd97.com", 1234, false);
         this.hostname = "HOSTNAME";
         this.port = 443;
         this.isSSL = true;
-        this.requestBody = new byte[0];
-        this.responseBody = new byte[0];
+    }
+
+    public Step(StepSequence sequence){
+        this(sequence, null);
     }
 
     public void setSequence(StepSequence sequence) {
@@ -248,6 +262,8 @@ public class Step implements IMessageEditorController, IStepVariableListener {
     }
 
     public void setHttpService(IHttpService httpService) {
+        //Don't actually set the HTTP Service, but store the individual components
+        //We can then rebuild it once the matchhack has been completed.
         this.hostname = httpService.getHost();
         this.port = httpService.getPort();
         this.isSSL = httpService.getProtocol().equalsIgnoreCase("https");

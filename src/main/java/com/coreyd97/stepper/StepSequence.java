@@ -94,7 +94,7 @@ public class StepSequence
     }
 
     public void addStep(){
-        this.addStep(new Step());
+        this.addStep(new Step(this));
     }
 
     public Vector<Step> getSteps() {
@@ -145,7 +145,7 @@ public class StepSequence
     }
 
     public void addStep(IHttpRequestResponse requestResponse) {
-        Step step = new Step();
+        Step step = new Step(this);
         step.setRequestBody(requestResponse.getRequest());
         step.setResponseBody(requestResponse.getResponse());
         step.setHttpService(requestResponse.getHttpService());
