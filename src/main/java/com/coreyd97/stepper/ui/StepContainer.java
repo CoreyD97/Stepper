@@ -122,6 +122,10 @@ public class StepContainer extends JPanel implements IStepListener, IStepVariabl
         return this.stepToPanelMap.get(step);
     }
 
+    public void setActivePanel(StepPanel stepPanel){
+        this.tabbedContainer.setSelectedComponent(stepPanel);
+    }
+
     @Override
     public void onStepAdded(Step step) {
         //Build and add panel for step

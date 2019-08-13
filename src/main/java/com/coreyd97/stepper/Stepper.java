@@ -77,7 +77,7 @@ public class Stepper implements IBurpExtender {
     }
 
     private void configurePreferences(){
-        preferences.registerSetting(Globals.PREF_STEP_SEQUENCES, new TypeToken<ArrayList<StepSequence>>(){}.getType(), Preferences.Visibility.GLOBAL);
+        preferences.registerSetting(Globals.PREF_STEP_SEQUENCES, new TypeToken<ArrayList<StepSequence>>(){}.getType(), Preferences.Visibility.PROJECT);
         preferences.registerSetting(Globals.PREF_PREV_VERSION, Double.class, Globals.VERSION, Preferences.Visibility.GLOBAL);
         preferences.registerSetting(Globals.PREF_VARS_IN_ALL_TOOLS, Boolean.class, true, Preferences.Visibility.GLOBAL);
         preferences.registerSetting(Globals.PREF_VARS_IN_EXTENDER, Boolean.class, true, Preferences.Visibility.GLOBAL);

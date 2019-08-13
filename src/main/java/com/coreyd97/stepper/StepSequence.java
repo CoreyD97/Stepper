@@ -1,6 +1,7 @@
 package com.coreyd97.stepper;
 
 import burp.IHttpRequestResponse;
+import com.coreyd97.stepper.ui.StepContainer;
 import com.coreyd97.stepper.ui.StepPanel;
 import com.coreyd97.stepper.ui.StepSequenceTab;
 
@@ -39,6 +40,7 @@ public class StepSequence
         new Thread(() -> {
             synchronized (StepSequence.this) {
                 StepSequenceTab tabUI = this.stepper.getUI().getTabForStepManager(this);
+                StepContainer stepContainer = tabUI.getStepsContainer();
 
                 for (IStepExecutionListener stepListener : this.stepExecutionListeners) {
                     stepListener.beforeFirstStep(this.steps.size());
@@ -46,7 +48,7 @@ public class StepSequence
                 for (Step step : this.steps) {
                     //Since we can't add a listener to the messageEditors, we must update
                     //Our request content before executing instead :(
-                    StepPanel panel = tabUI.getStepsContainer().getPanelForStep(step);
+                    StepPanel panel = stepContainer.getPanelForStep(step);
                     step.setRequestBody(panel.getRequestEditor().getMessage());
 
                     if(!step.isReadyToExecute()){
@@ -58,9 +60,14 @@ public class StepSequence
                     }
                 }
 
-
                 HashMap<String, StepVariable> rollingReplacements = new HashMap<>();
                 for (Step step : this.steps) {
+
+                    //Set step panel as selected panel
+                    StepPanel panel = stepContainer.getPanelForStep(step);
+                    stepContainer.setActivePanel(panel);
+
+                    //Execute the step
                     step.executeStep(rollingReplacements);
                     for (StepVariable variable : step.getVariables()) {
                         rollingReplacements.put(variable.getIdentifier(), variable);

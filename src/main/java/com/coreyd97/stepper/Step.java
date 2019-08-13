@@ -265,7 +265,8 @@ public class Step implements IMessageEditorController, IStepVariableListener {
     public void matchHackDone() {
         //Run once request/response editors have been created.
         //Set the IHTTPRequestResponse to the actual values once both have been matched.
-        if(matchHackCompleteTimes++ == 2) {
+        matchHackCompleteTimes++;
+        if(matchHackCompleteTimes == 2) {
             this.httpService = Stepper.callbacks.getHelpers().buildHttpService(
                     this.hostname, this.port, this.isSSL);
         }

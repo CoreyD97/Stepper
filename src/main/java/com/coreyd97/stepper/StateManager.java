@@ -20,7 +20,7 @@ public class StateManager implements IStepSequenceListener, IStepListener, IStep
     }
 
     public void loadSavedSequences(){
-        ArrayList<StepSequence> stepSequences = (ArrayList<StepSequence>) this.preferences.getSetting(Globals.PREF_STEP_SEQUENCES);
+        ArrayList<StepSequence> stepSequences = this.preferences.getSetting(Globals.PREF_STEP_SEQUENCES);
         if(stepSequences != null) {
             for (StepSequence stepSequence : stepSequences) {
                 this.stepper.addStepSequence(stepSequence);
