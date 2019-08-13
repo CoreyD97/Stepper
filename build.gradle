@@ -1,5 +1,5 @@
 group 'coreyd97'
-version '1.1'
+version '1.2'
 
 apply plugin: 'java'
 apply plugin: 'maven'
@@ -15,8 +15,8 @@ repositories {
 
 dependencies {
     compile 'net.portswigger.burp.extender:burp-extender-api:1.7.22'
-    compile 'com.github.CoreyD97:BurpExtenderUtilities:710549a'
-    testCompile files('/opt/BurpSuitePro/burpsuite_pro_v2.0.15beta.jar')
+    compile 'com.github.CoreyD97:BurpExtenderUtilities:d342aee387f22d55511c196e33b40cc7d3eb2c55'
+    testCompile files('/opt/BurpSuitePro/burpsuite_pro.jar')
 }
 
 task fatJar(type: Jar) {
