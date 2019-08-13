@@ -2,7 +2,6 @@ package com.coreyd97.stepper;
 
 import burp.IBurpExtender;
 import burp.IBurpExtenderCallbacks;
-import burp.IExtensionStateListener;
 import com.coreyd97.BurpExtenderUtilities.DefaultGsonProvider;
 import com.coreyd97.BurpExtenderUtilities.IGsonProvider;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
@@ -54,7 +53,7 @@ public class Stepper implements IBurpExtender {
     @Override
     public void registerExtenderCallbacks(IBurpExtenderCallbacks callbacks) {
         Stepper.callbacks = callbacks;
-        this.preferences = new Preferences(this.gsonProvider, callbacks);
+        this.preferences = new Preferences(Globals.EXTENSION_NAME, this.gsonProvider, callbacks);
         configurePreferences();
         this.stateManager = new StateManager(this, this.preferences);
         this.addStepSequenceListener(this.stateManager);
@@ -78,16 +77,16 @@ public class Stepper implements IBurpExtender {
     }
 
     private void configurePreferences(){
-        preferences.addSetting(Globals.PREF_STEP_SEQUENCES, new TypeToken<ArrayList<StepSequence>>(){}.getType());
-        preferences.addSetting(Globals.PREF_PREV_VERSION, Double.class, Globals.version);
-        preferences.addSetting(Globals.PREF_VARS_IN_ALL_TOOLS, Boolean.class, true);
-        preferences.addSetting(Globals.PREF_VARS_IN_EXTENDER, Boolean.class, true);
-        preferences.addSetting(Globals.PREF_VARS_IN_SEQUENCER, Boolean.class, true);
-        preferences.addSetting(Globals.PREF_VARS_IN_REPEATER, Boolean.class, true);
-        preferences.addSetting(Globals.PREF_VARS_IN_PROXY, Boolean.class, true);
-        preferences.addSetting(Globals.PREF_VARS_IN_INTRUDER, Boolean.class, true);
-        preferences.addSetting(Globals.PREF_VARS_IN_SPIDER, Boolean.class, true);
-        preferences.addSetting(Globals.PREF_VARS_IN_SCANNER, Boolean.class, true);
+        preferences.registerSetting(Globals.PREF_STEP_SEQUENCES, new TypeToken<ArrayList<StepSequence>>(){}.getType(), Preferences.Visibility.GLOBAL);
+        preferences.registerSetting(Globals.PREF_PREV_VERSION, Double.class, Globals.VERSION, Preferences.Visibility.GLOBAL);
+        preferences.registerSetting(Globals.PREF_VARS_IN_ALL_TOOLS, Boolean.class, true, Preferences.Visibility.GLOBAL);
+        preferences.registerSetting(Globals.PREF_VARS_IN_EXTENDER, Boolean.class, true, Preferences.Visibility.GLOBAL);
+        preferences.registerSetting(Globals.PREF_VARS_IN_SEQUENCER, Boolean.class, true, Preferences.Visibility.GLOBAL);
+        preferences.registerSetting(Globals.PREF_VARS_IN_REPEATER, Boolean.class, true, Preferences.Visibility.GLOBAL);
+        preferences.registerSetting(Globals.PREF_VARS_IN_PROXY, Boolean.class, true, Preferences.Visibility.GLOBAL);
+        preferences.registerSetting(Globals.PREF_VARS_IN_INTRUDER, Boolean.class, true, Preferences.Visibility.GLOBAL);
+        preferences.registerSetting(Globals.PREF_VARS_IN_SPIDER, Boolean.class, true, Preferences.Visibility.GLOBAL);
+        preferences.registerSetting(Globals.PREF_VARS_IN_SCANNER, Boolean.class, true, Preferences.Visibility.GLOBAL);
     }
 
     public Preferences getPreferences() {

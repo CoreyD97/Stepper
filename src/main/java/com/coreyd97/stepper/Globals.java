@@ -1,7 +1,8 @@
 package com.coreyd97.stepper;
 
 public class Globals {
-    public static final double version = 1.1;
+    public static final String EXTENSION_NAME = "Stepper";
+    public static final double VERSION = 1.1;
     public static final String PREF_STEP_SEQUENCES = "sequences";
     public static final String PREF_PREV_VERSION = "previousVersion";
     public static final String PREF_VARS_IN_ALL_TOOLS = "enableVarsInAll";

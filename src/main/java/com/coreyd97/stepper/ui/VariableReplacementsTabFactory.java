@@ -19,9 +19,9 @@ public class VariableReplacementsTabFactory implements IMessageEditorTabFactory 
     }
 
     @Override
-    public IMessageEditorTab createNewInstance(IMessageEditorController controller, boolean editable) {
-        VariableReplacementsTab tab = new VariableReplacementsTab(controller, editable);
-        IMessageEditorController actualController = findActualController(controller);
+    public IMessageEditorTab createNewInstance(IMessageEditorController controllerProxyInstance, boolean editable) {
+        VariableReplacementsTab tab = new VariableReplacementsTab(controllerProxyInstance, editable);
+        IMessageEditorController actualController = findActualController(controllerProxyInstance);
         if(actualController instanceof Step) {
             tab.setActualController((Step) actualController);
         }

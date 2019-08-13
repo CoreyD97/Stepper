@@ -1,5 +1,7 @@
 package com.coreyd97.stepper.ui;
 
+import com.coreyd97.BurpExtenderUtilities.Alignment;
+import com.coreyd97.BurpExtenderUtilities.ComponentGroup;
 import com.coreyd97.BurpExtenderUtilities.PanelBuilder;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.coreyd97.stepper.Globals;
@@ -30,15 +32,15 @@ public class OptionsPanel extends JPanel {
     private void buildPanel() {
         PanelBuilder panelBuilder = new PanelBuilder(preferences);
 
-        PanelBuilder.ComponentGroup toolEnabledGroup = panelBuilder.createComponentGroup("Allow Variables Usage");
-        JCheckBox allToolsCheckbox = (JCheckBox) toolEnabledGroup.addSetting(Globals.PREF_VARS_IN_ALL_TOOLS, "All Tools");
-        JCheckBox proxyCheckbox = (JCheckBox) toolEnabledGroup.addSetting(Globals.PREF_VARS_IN_PROXY, "Proxy");
-        JCheckBox repeaterCheckbox = (JCheckBox) toolEnabledGroup.addSetting(Globals.PREF_VARS_IN_REPEATER, "Repeater");
-        JCheckBox intruderCheckbox = (JCheckBox) toolEnabledGroup.addSetting(Globals.PREF_VARS_IN_INTRUDER, "Intruder");
-        JCheckBox spiderCheckbox = (JCheckBox) toolEnabledGroup.addSetting(Globals.PREF_VARS_IN_SPIDER, "Spider");
-        JCheckBox scannerCheckbox = (JCheckBox) toolEnabledGroup.addSetting(Globals.PREF_VARS_IN_SCANNER, "Scanner");
-        JCheckBox sequencerCheckbox = (JCheckBox) toolEnabledGroup.addSetting(Globals.PREF_VARS_IN_SEQUENCER, "Sequencer");
-        JCheckBox extenderCheckbox = (JCheckBox) toolEnabledGroup.addSetting(Globals.PREF_VARS_IN_EXTENDER, "Extender");
+        ComponentGroup toolEnabledGroup = panelBuilder.createComponentGroup("Allow Variables Usage");
+        JCheckBox allToolsCheckbox = toolEnabledGroup.addPreferenceComponent(Globals.PREF_VARS_IN_ALL_TOOLS, "All Tools");
+        JCheckBox proxyCheckbox = toolEnabledGroup.addPreferenceComponent(Globals.PREF_VARS_IN_PROXY, "Proxy");
+        JCheckBox repeaterCheckbox = toolEnabledGroup.addPreferenceComponent(Globals.PREF_VARS_IN_REPEATER, "Repeater");
+        JCheckBox intruderCheckbox = toolEnabledGroup.addPreferenceComponent(Globals.PREF_VARS_IN_INTRUDER, "Intruder");
+        JCheckBox spiderCheckbox = toolEnabledGroup.addPreferenceComponent(Globals.PREF_VARS_IN_SPIDER, "Spider");
+        JCheckBox scannerCheckbox = toolEnabledGroup.addPreferenceComponent(Globals.PREF_VARS_IN_SCANNER, "Scanner");
+        JCheckBox sequencerCheckbox = toolEnabledGroup.addPreferenceComponent(Globals.PREF_VARS_IN_SEQUENCER, "Sequencer");
+        JCheckBox extenderCheckbox = toolEnabledGroup.addPreferenceComponent(Globals.PREF_VARS_IN_EXTENDER, "Extender");
 
         { //Set initial states
             boolean individualEnabled = !allToolsCheckbox.isSelected();
@@ -65,7 +67,7 @@ public class OptionsPanel extends JPanel {
         GridBagConstraints constraints = toolEnabledGroup.generateNextConstraints();
         toolEnabledGroup.add(Box.createHorizontalStrut(175), constraints);
 
-        PanelBuilder.ComponentGroup importGroup = panelBuilder.createComponentGroup("Import Sequences");
+        ComponentGroup importGroup = panelBuilder.createComponentGroup("Import Sequences");
         importGroup.addButton("Import Sequences From File", actionEvent -> {
             JFileChooser fileChooser = new JFileChooser();
             fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
@@ -103,7 +105,7 @@ public class OptionsPanel extends JPanel {
             }
         });
 
-        PanelBuilder.ComponentGroup exportGroup = panelBuilder.createComponentGroup("Export Sequences");
+        ComponentGroup exportGroup = panelBuilder.createComponentGroup("Export Sequences");
         exportGroup.addButton("Export Sequences To File", actionEvent -> {
             String sequencesJson = exportSequencesAsString(this.stepper.getSequences(), true);
             if(sequencesJson == null || sequencesJson.length() == 0) return;
@@ -144,7 +146,7 @@ public class OptionsPanel extends JPanel {
         try {
             builtPanel = panelBuilder.build(new JComponent[][]{new JComponent[]{toolEnabledGroup, importGroup},
                                                                 new JComponent[]{toolEnabledGroup, exportGroup}},
-                                            PanelBuilder.Alignment.TOPMIDDLE);
+                                            Alignment.TOPMIDDLE, 1.0, 1.0);
         } catch (Exception e) {
             builtPanel = new JPanel();
             builtPanel.add(new JLabel("Could not build the preferences panel!"));
