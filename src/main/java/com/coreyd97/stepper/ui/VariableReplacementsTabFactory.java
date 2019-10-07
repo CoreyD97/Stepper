@@ -32,6 +32,7 @@ public class VariableReplacementsTabFactory implements IMessageEditorTabFactory 
         ArrayList<StepSequence> stepSequences = stepper.getSequences();
         IHttpService service;
         try {
+            Stepper.callbacks.printError("Testing for HTTP service. Ignore any errors about \"HTTP service cannot be null\"");
             service = controller.getHttpService();
         }catch (IllegalArgumentException | NullPointerException e){ return null; }
         if(service == null) return null;
