@@ -261,6 +261,7 @@ public class Step implements IMessageEditorController, IStepVariableListener {
         return this.isValidTarget() && this.getRequest() != null && this.getRequest().length != 0;
     }
 
+
     public void setHttpService(IHttpService httpService) {
         //Don't actually set the HTTP Service, but store the individual components
         //We can then rebuild it once the matchhack has been completed.

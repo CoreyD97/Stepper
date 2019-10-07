@@ -32,10 +32,12 @@ public class MessageProcessor implements IHttpListener {
                 allVariables.putAll(sequence.getAllVariables());
             }
 
-            byte[] newRequest = makeReplacements(messageInfo.getRequest(), allVariables);
-            try {
-                messageInfo.setRequest(newRequest);
-            }catch (UnsupportedOperationException e){ /**Read-only message**/}
+            if(allVariables.size() > 0) {
+                byte[] newRequest = makeReplacements(messageInfo.getRequest(), allVariables);
+                try {
+                    messageInfo.setRequest(newRequest);
+                } catch (UnsupportedOperationException e) { /**Read-only message**/}
+            }
         }
     }
 
@@ -64,23 +66,30 @@ public class MessageProcessor implements IHttpListener {
     public static byte[] makeReplacements(byte[] originalContent, HashMap<String, StepVariable> replacements){
         byte[] request = Arrays.copyOf(originalContent, originalContent.length);
         if(request == null) return null;
+        boolean hasReplaced = false;
+
         if(replacements != null) {
             //Apply replacements.
             String requestString = new String(request);
             for (StepVariable replacement : replacements.values()) {
                 //Find identifier in requestBody and replace with latest value.
                 Matcher m = StepVariable.createIdentifierPattern(replacement).matcher(requestString);
+                if(m.find()){ hasReplaced = true; }
                 String replacementValue = replacement.getLatestValue() != null ? replacement.getLatestValue() : "";
                 requestString = m.replaceAll(replacementValue);
             }
             request = requestString.getBytes();
         }
 
-        //Analyse the request with replacements to identify the headers and body
-        IRequestInfo requestInfo = Stepper.callbacks.getHelpers().analyzeRequest(request);
-        byte[] requestBody = Arrays.copyOfRange(request, requestInfo.getBodyOffset(), request.length);
+        if(hasReplaced) {
+            //Analyse the request with replacements to identify the headers and body
+            IRequestInfo requestInfo = Stepper.callbacks.getHelpers().analyzeRequest(request);
+            byte[] requestBody = Arrays.copyOfRange(request, requestInfo.getBodyOffset(), request.length);
 
-        //Built request
-        return Stepper.callbacks.getHelpers().buildHttpMessage(requestInfo.getHeaders(), requestBody);
+            //Built request
+            return Stepper.callbacks.getHelpers().buildHttpMessage(requestInfo.getHeaders(), requestBody);
+        }else{
+            return originalContent;
+        }
     }
 }

@@ -22,7 +22,7 @@ public class VariableReplacementsTabFactory implements IMessageEditorTabFactory 
     public IMessageEditorTab createNewInstance(IMessageEditorController controllerProxyInstance, boolean editable) {
         VariableReplacementsTab tab = new VariableReplacementsTab(controllerProxyInstance, editable);
         IMessageEditorController actualController = findActualController(controllerProxyInstance);
-        if(actualController instanceof Step) {
+        if(actualController != null && actualController instanceof Step) {
             tab.setActualController((Step) actualController);
         }
         return tab;
