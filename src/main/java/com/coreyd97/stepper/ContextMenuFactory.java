@@ -40,7 +40,7 @@ public class ContextMenuFactory implements IContextMenuFactory {
 
         JMenuItem newSequence = new JMenuItem("New Sequence");
         newSequence.addActionListener(actionEvent -> {
-            String name = JOptionPane.showInputDialog(null, "Enter a name to identify the sequence: ", "", JOptionPane.PLAIN_MESSAGE);
+            String name = JOptionPane.showInputDialog(Stepper.getInstance().getUI().getUiComponent(), "Enter a name to identify the sequence: ", "", JOptionPane.PLAIN_MESSAGE);
             if(name != null) {
                 StepSequence stepSequence = new StepSequence(this.stepper, false, name);
                 stepSequence.addStep(messages[0]);

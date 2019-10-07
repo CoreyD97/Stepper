@@ -9,6 +9,7 @@ import com.coreyd97.stepper.Stepper;
 import com.coreyd97.stepper.StepSequence;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class VariableReplacementsTabFactory implements IMessageEditorTabFactory {
 
@@ -30,17 +31,11 @@ public class VariableReplacementsTabFactory implements IMessageEditorTabFactory 
 
     private IMessageEditorController findActualController(IMessageEditorController controller){
         ArrayList<StepSequence> stepSequences = stepper.getSequences();
-        IHttpService service;
-        try {
-            Stepper.callbacks.printError("Testing for HTTP service. Ignore any errors about \"HTTP service cannot be null\"");
-            service = controller.getHttpService();
-        }catch (IllegalArgumentException | NullPointerException e){ return null; }
-        if(service == null) return null;
+        byte[] requestMatchHack = controller.getRequest();
 
         for (StepSequence stepSequence : stepSequences) {
             for (Step step : stepSequence.getSteps()) {
-                if(step.getHttpService().toString().equalsIgnoreCase(service.toString())){
-                    step.matchHackDone();
+                if(Arrays.equals(requestMatchHack, step.getRequest())){
                     return step;
                 }
             }
