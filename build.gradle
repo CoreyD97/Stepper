@@ -19,10 +19,9 @@ dependencies {
     testCompile files('/opt/BurpSuitePro/burpsuite_pro.jar')
 }
 
-task fatJar(type: Jar) {
+jar {
     baseName = project.name
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
-    with jar
 }
 
 configurations.all {
