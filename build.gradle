@@ -15,14 +15,13 @@ repositories {
 
 dependencies {
     compile 'net.portswigger.burp.extender:burp-extender-api:1.7.22'
-    compile 'com.github.CoreyD97:BurpExtenderUtilities:d342aee387f22d55511c196e33b40cc7d3eb2c55'
+    compile 'com.github.CoreyD97:BurpExtenderUtilities:8b5b654ac4d07fb6fcc8f0ae3a9c34ce553d7ea6'
     testCompile files('/opt/BurpSuitePro/burpsuite_pro.jar')
 }
 
-task fatJar(type: Jar) {
+jar {
     baseName = project.name
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
-    with jar
 }
 
 configurations.all {

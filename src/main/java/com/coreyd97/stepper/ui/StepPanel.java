@@ -31,10 +31,14 @@ public class StepPanel extends JPanel {
         this.stepSequence = sequence;
         this.step = step;
 
+        //During message editor creation, the VariableReplacementTab will be matched with the actual
+        //IHttpController implementation, not the proxy class.
         this.requestEditor = Stepper.callbacks.createMessageEditor(step, true);
         this.requestEditor.setMessage(step.getRequest(), true);
         this.responseEditor = Stepper.callbacks.createMessageEditor(step, false);
         this.responseEditor.setMessage(step.getResponse(), false);
+
+        //Now the match has been completed, we can register the editors with the step.
         this.step.registerRequestEditor(this.requestEditor);
         this.step.registerResponseEditor(this.responseEditor);
 

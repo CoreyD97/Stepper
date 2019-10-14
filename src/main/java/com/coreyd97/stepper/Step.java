@@ -40,7 +40,6 @@ public class Step implements IMessageEditorController, IStepVariableListener {
             this.title = "Step " + (sequence.getSteps().size()+1);
         }
 
-        this.httpService = Stepper.callbacks.getHelpers().buildHttpService("MATCHHACK." + Math.random() + ".coreyd97.com", 1234, false);
         this.hostname = "HOSTNAME";
         this.port = 443;
         this.isSSL = true;
@@ -116,7 +115,7 @@ public class Step implements IMessageEditorController, IStepVariableListener {
 
     @Override
     public byte[] getRequest() {
-        if(this.requestEditor == null) return requestBody;
+        if(this.requestEditor == null) return ("MATCHHACK." + Math.random() + ".coreyd97.com").getBytes();
         return this.requestEditor.getMessage();
     }
 
@@ -156,6 +155,11 @@ public class Step implements IMessageEditorController, IStepVariableListener {
         for (StepVariable variable : this.variables) {
             updateVariable(variable, responseString);
         }
+    }
+
+    private void updateHttpService(){
+        this.httpService = Stepper.callbacks.getHelpers().buildHttpService(
+                this.hostname, this.port, this.isSSL);
     }
 
     private void updateVariable(StepVariable variable, String response){
@@ -227,6 +231,7 @@ public class Step implements IMessageEditorController, IStepVariableListener {
 
     public void setHostname(String hostname) {
         this.hostname = hostname;
+        updateHttpService();
     }
 
     public Integer getPort() {
@@ -235,6 +240,7 @@ public class Step implements IMessageEditorController, IStepVariableListener {
 
     public void setPort(Integer port) {
         this.port = port;
+        updateHttpService();
     }
 
     public boolean isSSL() {
@@ -242,6 +248,7 @@ public class Step implements IMessageEditorController, IStepVariableListener {
     }
 
     public void setSSL(boolean SSL) {
+        updateHttpService();
         isSSL = SSL;
     }
 
@@ -261,12 +268,12 @@ public class Step implements IMessageEditorController, IStepVariableListener {
         return this.isValidTarget() && this.getRequest() != null && this.getRequest().length != 0;
     }
 
+
     public void setHttpService(IHttpService httpService) {
-        //Don't actually set the HTTP Service, but store the individual components
-        //We can then rebuild it once the matchhack has been completed.
         this.hostname = httpService.getHost();
         this.port = httpService.getPort();
         this.isSSL = httpService.getProtocol().equalsIgnoreCase("https");
+        updateHttpService();
     }
 
     public void setTitle(String title) {
@@ -275,17 +282,6 @@ public class Step implements IMessageEditorController, IStepVariableListener {
 
     public String getTitle() {
         return title;
-    }
-
-    private int matchHackCompleteTimes = 0;
-    public void matchHackDone() {
-        //Run once request/response editors have been created.
-        //Set the IHTTPRequestResponse to the actual values once both have been matched.
-        matchHackCompleteTimes++;
-        if(matchHackCompleteTimes == 2) {
-            this.httpService = Stepper.callbacks.getHelpers().buildHttpService(
-                    this.hostname, this.port, this.isSSL);
-        }
     }
 
     public HashMap<String, StepVariable> getRollingVariables() {
