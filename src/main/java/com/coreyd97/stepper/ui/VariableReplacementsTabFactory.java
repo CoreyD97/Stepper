@@ -31,7 +31,15 @@ public class VariableReplacementsTabFactory implements IMessageEditorTabFactory 
 
     private IMessageEditorController findActualController(IMessageEditorController controller){
         ArrayList<StepSequence> stepSequences = stepper.getSequences();
-        byte[] requestMatchHack = controller.getRequest();
+        byte[] requestMatchHack;
+
+        try{
+             requestMatchHack = controller.getRequest();
+        }catch (Exception e){
+            //The controller threw and exception when trying to get the request.
+            //This is caused by the class which implements the controller, not stepper!
+            return null;
+        }
 
         for (StepSequence stepSequence : stepSequences) {
             for (Step step : stepSequence.getSteps()) {
