@@ -68,7 +68,8 @@ public class StepSequence
                     stepContainer.setActivePanel(panel);
 
                     //Execute the step
-                    step.executeStep(rollingReplacements);
+                    boolean success = step.executeStep(rollingReplacements);
+                    if(!success) break; //Skip to end of sequence if one of the requests failed.
                     for (StepVariable variable : step.getVariables()) {
                         rollingReplacements.put(variable.getIdentifier(), variable);
                     }

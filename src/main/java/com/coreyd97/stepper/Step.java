@@ -2,6 +2,7 @@ package com.coreyd97.stepper;
 
 import burp.*;
 
+import javax.swing.*;
 import java.util.*;
 import java.util.regex.Matcher;
 
@@ -130,9 +131,24 @@ public class Step implements IMessageEditorController, IStepVariableListener {
         this.executeStep(variables);
     }
 
-    public void executeStep(HashMap<String, StepVariable> replacements) {
+    public boolean executeStep(HashMap<String, StepVariable> replacements) {
         byte[] requestWithoutReplacements = getRequest();
-        byte[] builtRequest = MessageProcessor.makeReplacements(requestWithoutReplacements, replacements);
+        byte[] builtRequest;
+
+        if(MessageProcessor.hasStepVariable(requestWithoutReplacements)) {
+            if(!MessageProcessor.isProcessable(requestWithoutReplacements)){
+                //If there's unicode issues, we're likely acting on binary data. Warn the user.
+                //TODO STEP SEQUENCE HANDLE BINARY ERRORS.
+                int result = JOptionPane.showConfirmDialog(Stepper.getInstance().getUI().getUiComponent(),
+                        "The request contains non UTF characters.\nStepper is able to make the replacements, " +
+                                "but some of the binary data may be lost. Continue?",
+                        "Stepper Replacement Error", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+                if(result == JOptionPane.NO_OPTION) return false;
+            }
+            builtRequest = MessageProcessor.makeReplacements(requestWithoutReplacements, replacements);
+        }else{
+            builtRequest = Arrays.copyOf(requestWithoutReplacements, requestWithoutReplacements.length);
+        }
 
         //TODO Update the displayed request with the content-length header which was sent to the server.
         setResponseBody(new byte[0]);
@@ -147,7 +163,7 @@ public class Step implements IMessageEditorController, IStepVariableListener {
         setResponseBody(this.requestResponse.getResponse());
 
         if(this.requestResponse.getResponse() == null){
-            return;
+            return false;
         }
         String responseString = new String(this.requestResponse.getResponse());
 
@@ -155,6 +171,8 @@ public class Step implements IMessageEditorController, IStepVariableListener {
         for (StepVariable variable : this.variables) {
             updateVariable(variable, responseString);
         }
+
+        return true;
     }
 
     private void updateHttpService(){
