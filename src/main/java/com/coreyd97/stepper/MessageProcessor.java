@@ -3,7 +3,6 @@ package com.coreyd97.stepper;
 import burp.*;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.google.gson.Gson;
-import com.sun.istack.internal.NotNull;
 
 import javax.swing.*;
 import java.nio.charset.Charset;
@@ -83,7 +82,7 @@ public class MessageProcessor implements IHttpListener {
     }
 
     public static byte[] makeReplacements(byte[] originalContent,
-                                          @NotNull HashMap<String, StepVariable> replacements) {
+                                          HashMap<String, StepVariable> replacements) {
         byte[] request = Arrays.copyOf(originalContent, originalContent.length);
         boolean hasReplaced = false;
 
