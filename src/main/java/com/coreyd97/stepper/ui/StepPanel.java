@@ -4,6 +4,8 @@ import burp.IMessageEditor;
 import com.coreyd97.stepper.Step;
 import com.coreyd97.stepper.Stepper;
 import com.coreyd97.stepper.StepSequence;
+import com.coreyd97.stepper.exception.SequenceCancelledException;
+import com.coreyd97.stepper.exception.SequenceExecutionException;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -58,7 +60,16 @@ public class StepPanel extends JPanel {
         JButton executeStepButton = new JButton("Execute Step");
         executeStepButton.addActionListener(actionEvent -> {
             new Thread(() -> {
-                step.executeStep();
+                executeStepButton.setEnabled(false);
+                try {
+                    step.executeStep();
+                }catch (SequenceCancelledException ignored){
+                }catch (SequenceExecutionException e){
+                    JOptionPane.showMessageDialog(this, e.getMessage(),
+                            "Step Error", JOptionPane.ERROR_MESSAGE);
+                }finally {
+                    executeStepButton.setEnabled(true);
+                }
             }).start();
         });
         JPanel httpServicePanel = new JPanel(new GridBagLayout());

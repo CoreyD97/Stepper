@@ -1,6 +1,8 @@
 package com.coreyd97.stepper;
 
 import burp.*;
+import com.coreyd97.stepper.exception.SequenceCancelledException;
+import com.coreyd97.stepper.exception.SequenceExecutionException;
 
 import javax.swing.*;
 import java.util.*;
@@ -58,17 +60,13 @@ public class Step implements IMessageEditorController, IStepVariableListener {
         this.requestBody = requestBody;
         if(this.requestEditor != null)
             this.requestEditor.setMessage(requestBody, true);
-        for (IHttpRequestResponseListener requestResponseListener : requestResponseListeners) {
-            requestResponseListener.onRequestSet(requestBody);
-        }
+        stepUpdated();
     }
 
     public void setResponseBody(byte[] responseBody){
         if(this.responseEditor != null)
             this.responseEditor.setMessage(responseBody, false);
-        for (IHttpRequestResponseListener requestResponseListener : requestResponseListeners) {
-            requestResponseListener.onResponseSet(responseBody);
-        }
+
     }
 
     public Vector<StepVariable> getVariables() {
@@ -105,6 +103,14 @@ public class Step implements IMessageEditorController, IStepVariableListener {
         }
     }
 
+    private void stepUpdated(){
+        if(this.sequence != null){
+            for (IStepListener stepListener : this.sequence.getStepListeners()) {
+                try{ stepListener.onStepUpdated(this); }catch (Exception ignored){}
+            }
+        }
+    }
+
     public StepSequence getSequence() {
         return sequence;
     }
@@ -126,12 +132,12 @@ public class Step implements IMessageEditorController, IStepVariableListener {
         return this.responseEditor.getMessage();
     }
 
-    public void executeStep(){
+    public void executeStep() throws SequenceExecutionException {
         HashMap<String, StepVariable> variables = this.sequence.getRollingVariables(this);
         this.executeStep(variables);
     }
 
-    public boolean executeStep(HashMap<String, StepVariable> replacements) {
+    public void executeStep(HashMap<String, StepVariable> replacements) throws SequenceExecutionException {
         byte[] requestWithoutReplacements = getRequest();
         byte[] builtRequest;
 
@@ -143,7 +149,7 @@ public class Step implements IMessageEditorController, IStepVariableListener {
                         "The request contains non UTF characters.\nStepper is able to make the replacements, " +
                                 "but some of the binary data may be lost. Continue?",
                         "Stepper Replacement Error", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-                if(result == JOptionPane.NO_OPTION) return false;
+                if(result == JOptionPane.NO_OPTION) throw new SequenceCancelledException("Binary data, user cancelled.");
             }
             builtRequest = MessageProcessor.makeReplacements(requestWithoutReplacements, replacements);
         }else{
@@ -160,11 +166,10 @@ public class Step implements IMessageEditorController, IStepVariableListener {
 
         //Update with response
         this.requestResponse = Stepper.callbacks.makeHttpRequest(this.getHttpService(), builtRequest);
-        setResponseBody(this.requestResponse.getResponse());
+        if(this.requestResponse.getResponse() == null)
+            throw new SequenceExecutionException("The request to the server timed out.");
 
-        if(this.requestResponse.getResponse() == null){
-            return false;
-        }
+        setResponseBody(this.requestResponse.getResponse());
         String responseString = new String(this.requestResponse.getResponse());
 
         //Pull variables from response
@@ -172,12 +177,12 @@ public class Step implements IMessageEditorController, IStepVariableListener {
             updateVariable(variable, responseString);
         }
 
-        return true;
     }
 
     private void updateHttpService(){
         this.httpService = Stepper.callbacks.getHelpers().buildHttpService(
                 this.hostname, this.port, this.isSSL);
+        stepUpdated();
     }
 
     private void updateVariable(StepVariable variable, String response){

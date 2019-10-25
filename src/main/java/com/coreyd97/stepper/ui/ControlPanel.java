@@ -11,6 +11,7 @@ public class ControlPanel extends JPanel implements IStepExecutionListener {
 
     private final StepSequence stepSequence;
     private final JButton executeButton;
+    private final JButton cancelButton;
     private int stepsToExecute;
     private int stepsExecuted;
 
@@ -23,6 +24,14 @@ public class ControlPanel extends JPanel implements IStepExecutionListener {
             this.stepSequence.executeSteps();
         });
 
+        //TODO Implement sequence cancel
+        this.cancelButton = new JButton("Cancel");
+//        this.cancelButton.setEnabled(false);
+//        this.cancelButton.addActionListener(actionEvent -> {
+////            this.stepSequence.cancelSequence();
+//        });
+//
+//        add(cancelButton, BorderLayout.EAST);
         add(executeButton, BorderLayout.CENTER);
         this.stepSequence.addStepExecutionListener(this);
     }
@@ -33,6 +42,7 @@ public class ControlPanel extends JPanel implements IStepExecutionListener {
         this.stepsExecuted = 0;
         this.executeButton.setEnabled(false);
         this.executeButton.setText("Executing... (" + stepsExecuted + "/" + stepsToExecute + ")");
+        this.cancelButton.setEnabled(true);
     }
 
     @Override
@@ -43,6 +53,7 @@ public class ControlPanel extends JPanel implements IStepExecutionListener {
 
     @Override
     public void afterLastStep() {
+        this.cancelButton.setEnabled(false);
         this.executeButton.setEnabled(true);
         this.executeButton.setText("Execute Sequence");
     }
