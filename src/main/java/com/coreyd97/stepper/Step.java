@@ -30,6 +30,9 @@ public class Step implements IMessageEditorController, IStepVariableListener {
         this.requestResponseListeners = new ArrayList<>();
         this.requestBody = new byte[0];
         this.responseBody = new byte[0];
+        this.hostname = "HOSTNAME";
+        this.port = 443;
+        this.isSSL = true;
     }
 
     public Step(StepSequence sequence, String title){
@@ -41,9 +44,6 @@ public class Step implements IMessageEditorController, IStepVariableListener {
             this.title = "Step " + (sequence.getSteps().size()+1);
         }
 
-        this.hostname = "HOSTNAME";
-        this.port = 443;
-        this.isSSL = true;
     }
 
     public Step(StepSequence sequence){
