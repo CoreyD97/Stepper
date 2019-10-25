@@ -36,6 +36,11 @@ public class StateManager implements IStepSequenceListener, IStepListener, IStep
     }
 
     @Override
+    public void onStepUpdated(Step step) {
+        saveCurrentSequences();
+    }
+
+    @Override
     public void onStepSequenceRemoved(StepSequence sequence) {
         sequence.removeStepListener(this);
         sequence.getSequenceGlobals().removeVariableListener(this);

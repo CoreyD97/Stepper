@@ -136,6 +136,11 @@ public class StepContainer extends JPanel implements IStepListener, IStepVariabl
     }
 
     @Override
+    public void onStepUpdated(Step step) {
+        //Do nothing
+    }
+
+    @Override
     public void onStepRemoved(Step step) {
         //Get panel for step and dispose panel
         StepPanel panel = this.stepToPanelMap.remove(step);
