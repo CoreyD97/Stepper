@@ -1,6 +1,8 @@
 package com.coreyd97.stepper;
 
 import burp.IHttpRequestResponse;
+import com.coreyd97.stepper.exception.SequenceCancelledException;
+import com.coreyd97.stepper.exception.SequenceExecutionException;
 import com.coreyd97.stepper.ui.StepContainer;
 import com.coreyd97.stepper.ui.StepPanel;
 import com.coreyd97.stepper.ui.StepSequenceTab;
@@ -60,19 +62,27 @@ public class StepSequence
                     }
                 }
 
-                HashMap<String, StepVariable> rollingReplacements = new HashMap<>();
-                for (Step step : this.steps) {
 
-                    //Set step panel as selected panel
-                    StepPanel panel = stepContainer.getPanelForStep(step);
-                    stepContainer.setActivePanel(panel);
+                try {
+                    HashMap<String, StepVariable> rollingReplacements = new HashMap<>();
+                    for (Step step : this.steps) {
 
-                    //Execute the step
-                    step.executeStep(rollingReplacements);
-                    for (StepVariable variable : step.getVariables()) {
-                        rollingReplacements.put(variable.getIdentifier(), variable);
+                        //Set step panel as selected panel
+                        StepPanel panel = stepContainer.getPanelForStep(step);
+                        stepContainer.setActivePanel(panel);
+
+                        //Execute the step
+                        step.executeStep(rollingReplacements);
+                        for (StepVariable variable : step.getVariables()) {
+                            rollingReplacements.put(variable.getIdentifier(), variable);
+                        }
+                        this.stepExecutionListeners.forEach(listener -> listener.stepExecuted(step));
                     }
-                    this.stepExecutionListeners.forEach(listener -> listener.stepExecuted(step));
+                }catch (SequenceCancelledException e){
+                    //User cancelled. Ignore it.
+                }catch (SequenceExecutionException e){
+                    JOptionPane.showMessageDialog(this.stepper.getUI().getUiComponent(), e.getMessage(),
+                            "Sequence Stopped", JOptionPane.ERROR_MESSAGE);
                 }
                 for (IStepExecutionListener stepLExecutionistener : stepExecutionListeners) {
                     stepLExecutionistener.afterLastStep();
@@ -171,6 +181,10 @@ public class StepSequence
             if(step.getVariables().contains(variable)) return step;
         }
         return null;
+    }
+
+    public ArrayList<IStepListener> getStepListeners() {
+        return stepListeners;
     }
 
     public String getTitle() {

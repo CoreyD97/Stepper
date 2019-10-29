@@ -25,6 +25,7 @@ public class StepVariable {
         this();
         this.identifier = identifier;
         this.regex = regex;
+        this.latestValue = "";
     }
 
     public String getIdentifier() {

@@ -1,7 +1,10 @@
 package com.coreyd97.stepper;
 
 import burp.*;
+import com.coreyd97.stepper.exception.SequenceCancelledException;
+import com.coreyd97.stepper.exception.SequenceExecutionException;
 
+import javax.swing.*;
 import java.util.*;
 import java.util.regex.Matcher;
 
@@ -29,6 +32,9 @@ public class Step implements IMessageEditorController, IStepVariableListener {
         this.requestResponseListeners = new ArrayList<>();
         this.requestBody = new byte[0];
         this.responseBody = new byte[0];
+        this.hostname = "HOSTNAME";
+        this.port = 443;
+        this.isSSL = true;
     }
 
     public Step(StepSequence sequence, String title){
@@ -40,9 +46,6 @@ public class Step implements IMessageEditorController, IStepVariableListener {
             this.title = "Step " + (sequence.getSteps().size()+1);
         }
 
-        this.hostname = "HOSTNAME";
-        this.port = 443;
-        this.isSSL = true;
     }
 
     public Step(StepSequence sequence){
@@ -57,17 +60,13 @@ public class Step implements IMessageEditorController, IStepVariableListener {
         this.requestBody = requestBody;
         if(this.requestEditor != null)
             this.requestEditor.setMessage(requestBody, true);
-        for (IHttpRequestResponseListener requestResponseListener : requestResponseListeners) {
-            requestResponseListener.onRequestSet(requestBody);
-        }
+        stepUpdated();
     }
 
     public void setResponseBody(byte[] responseBody){
         if(this.responseEditor != null)
             this.responseEditor.setMessage(responseBody, false);
-        for (IHttpRequestResponseListener requestResponseListener : requestResponseListeners) {
-            requestResponseListener.onResponseSet(responseBody);
-        }
+
     }
 
     public Vector<StepVariable> getVariables() {
@@ -104,6 +103,14 @@ public class Step implements IMessageEditorController, IStepVariableListener {
         }
     }
 
+    private void stepUpdated(){
+        if(this.sequence != null){
+            for (IStepListener stepListener : this.sequence.getStepListeners()) {
+                try{ stepListener.onStepUpdated(this); }catch (Exception ignored){}
+            }
+        }
+    }
+
     public StepSequence getSequence() {
         return sequence;
     }
@@ -125,14 +132,29 @@ public class Step implements IMessageEditorController, IStepVariableListener {
         return this.responseEditor.getMessage();
     }
 
-    public void executeStep(){
+    public void executeStep() throws SequenceExecutionException {
         HashMap<String, StepVariable> variables = this.sequence.getRollingVariables(this);
         this.executeStep(variables);
     }
 
-    public void executeStep(HashMap<String, StepVariable> replacements) {
+    public void executeStep(HashMap<String, StepVariable> replacements) throws SequenceExecutionException {
         byte[] requestWithoutReplacements = getRequest();
-        byte[] builtRequest = MessageProcessor.makeReplacements(requestWithoutReplacements, replacements);
+        byte[] builtRequest;
+
+        if(MessageProcessor.hasStepVariable(requestWithoutReplacements)) {
+            if(!MessageProcessor.isProcessable(requestWithoutReplacements)){
+                //If there's unicode issues, we're likely acting on binary data. Warn the user.
+                //TODO STEP SEQUENCE HANDLE BINARY ERRORS.
+                int result = JOptionPane.showConfirmDialog(Stepper.getInstance().getUI().getUiComponent(),
+                        "The request contains non UTF characters.\nStepper is able to make the replacements, " +
+                                "but some of the binary data may be lost. Continue?",
+                        "Stepper Replacement Error", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+                if(result == JOptionPane.NO_OPTION) throw new SequenceCancelledException("Binary data, user cancelled.");
+            }
+            builtRequest = MessageProcessor.makeReplacements(requestWithoutReplacements, replacements);
+        }else{
+            builtRequest = Arrays.copyOf(requestWithoutReplacements, requestWithoutReplacements.length);
+        }
 
         //TODO Update the displayed request with the content-length header which was sent to the server.
         setResponseBody(new byte[0]);
@@ -144,22 +166,23 @@ public class Step implements IMessageEditorController, IStepVariableListener {
 
         //Update with response
         this.requestResponse = Stepper.callbacks.makeHttpRequest(this.getHttpService(), builtRequest);
-        setResponseBody(this.requestResponse.getResponse());
+        if(this.requestResponse.getResponse() == null)
+            throw new SequenceExecutionException("The request to the server timed out.");
 
-        if(this.requestResponse.getResponse() == null){
-            return;
-        }
+        setResponseBody(this.requestResponse.getResponse());
         String responseString = new String(this.requestResponse.getResponse());
 
         //Pull variables from response
         for (StepVariable variable : this.variables) {
             updateVariable(variable, responseString);
         }
+
     }
 
     private void updateHttpService(){
         this.httpService = Stepper.callbacks.getHelpers().buildHttpService(
                 this.hostname, this.port, this.isSSL);
+        stepUpdated();
     }
 
     private void updateVariable(StepVariable variable, String response){
