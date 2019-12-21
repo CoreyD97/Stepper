@@ -34,13 +34,13 @@ public class StepperUI implements ITab, IStepSequenceListener {
         this.blankPanel.addComponentListener(new ComponentAdapter() {
             @Override
             public void componentShown(ComponentEvent componentEvent) {
-                stepper.addStepSequence(new StepSequence(extension, true));
+                stepper.addStepSequence(new StepSequence(extension, false));
             }
         });
 
         //Begin hack: Add a temp tab to prevent triggering componentShown of add tab.
         this.tabbedPane.addTab("toRemove", null);
-        this.tabbedPane.addTab("Add Tab", blankPanel);
+        this.tabbedPane.addTab("Add Sequence", blankPanel);
         this.tabbedPane.setSelectedIndex(-1);
         this.tabbedPane.remove(0);
         //End hack
@@ -62,9 +62,7 @@ public class StepperUI implements ITab, IStepSequenceListener {
         int newTabLocation = this.tabbedPane.getTabCount()-3;
         this.tabbedPane.insertTab("", null, tab, null, newTabLocation);
 
-        Consumer<String> onTitleChange = title -> {
-            sequence.setTitle(title);
-        };
+        Consumer<String> onTitleChange = sequence::setTitle;
 
         Consumer<Void> onRemoveClicked = aVoid -> {
             this.extension.removeStepSet(sequence);

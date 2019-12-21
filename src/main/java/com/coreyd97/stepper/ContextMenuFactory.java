@@ -10,6 +10,8 @@ import javax.swing.*;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.datatransfer.StringSelection;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.*;
 import java.util.List;
 import java.util.function.BiConsumer;
@@ -64,12 +66,12 @@ public class ContextMenuFactory implements IContextMenuFactory {
 
 
         if(invocation.getInvocationContext() == IContextMenuInvocation.CONTEXT_MESSAGE_EDITOR_REQUEST){
-            menuItems.addAll(buildVariableMenuItems());
+            menuItems.addAll(buildVariableMenuItems(invocation));
         }
         return menuItems;
     }
 
-    private List<JMenuItem> buildVariableMenuItems(){
+    private List<JMenuItem> buildVariableMenuItems(IContextMenuInvocation invocation){
         List<JMenuItem> menuItems = new ArrayList<>();
 
         HashMap<StepSequence, HashMap<String, StepVariable>> sequenceVariableMap = new HashMap<>();
@@ -93,7 +95,7 @@ public class ContextMenuFactory implements IContextMenuFactory {
 
         if(varCount > 0) {
             JMenu addStepVariableToClipboardMenu = new JMenu("Add Stepper Variable To Clipboard");
-            JMenuItem insertVariable = new JMenuItem("Insert Stepper Variable At Cursor (NOT IMPLEMENTED)");
+            JMenuItem insertVariable = new JMenuItem("Insert Stepper Variable At Cursor (NOT POSSIBLE TO IMPLEMENT)");
 
             if(isViewingSequenceStep){ //Only variables from a single sequence step
                 Collection<StepVariable> variables = sequenceVariableMap.values().stream()
@@ -119,11 +121,7 @@ public class ContextMenuFactory implements IContextMenuFactory {
                 }
             }
 
-
             menuItems.add(addStepVariableToClipboardMenu);
-            //Not implemented yet.
-            //menuItems.a
-            // dd(insertVariable);
         }
         return menuItems;
     }
