@@ -8,6 +8,8 @@ import com.coreyd97.stepper.ui.StepPanel;
 import com.coreyd97.stepper.ui.StepSequenceTab;
 
 import javax.swing.*;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Vector;
@@ -140,7 +142,7 @@ public class StepSequence
         }
     }
 
-    public HashMap<String, StepVariable> getRollingVariables(Step uptoStep){
+    public HashMap<String, StepVariable> getRollingVariablesUpToStep(Step uptoStep){
         HashMap<String, StepVariable> rolling = new HashMap<>();
         for (StepVariable variable : this.sequenceGlobals.getVariables()) {
             rolling.put(variable.getIdentifier(), variable);

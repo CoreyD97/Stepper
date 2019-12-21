@@ -81,7 +81,7 @@ public class SequenceSelectionTable extends JTable {
                     return sequence.getSteps().size();
                 }
                 case 3: {
-                    return sequence.getRollingVariables(null).size();
+                    return sequence.getRollingVariablesUpToStep(null).size();
                 }
             }
             return "";

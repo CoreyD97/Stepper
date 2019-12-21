@@ -133,7 +133,7 @@ public class Step implements IMessageEditorController, IStepVariableListener {
     }
 
     public void executeStep() throws SequenceExecutionException {
-        HashMap<String, StepVariable> variables = this.sequence.getRollingVariables(this);
+        HashMap<String, StepVariable> variables = this.sequence.getRollingVariablesUpToStep(this);
         this.executeStep(variables);
     }
 
@@ -309,7 +309,7 @@ public class Step implements IMessageEditorController, IStepVariableListener {
 
     public HashMap<String, StepVariable> getRollingVariables() {
         if(this.sequence == null) return new HashMap<>();
-        return this.sequence.getRollingVariables(this);
+        return this.sequence.getRollingVariablesUpToStep(this);
     }
 
     public void registerRequestEditor(IMessageEditor requestEditor) {
