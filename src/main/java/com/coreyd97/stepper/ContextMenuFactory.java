@@ -26,25 +26,33 @@ public class ContextMenuFactory implements IContextMenuFactory {
     @Override
     public List<JMenuItem> createMenuItems(IContextMenuInvocation invocation) {
         IHttpRequestResponse[] messages = invocation.getSelectedMessages();
-        if(messages.length != 1) return null;
-
+        if(messages.length == 0) return null;
         ArrayList<JMenuItem> menuItems = new ArrayList<>();
-        JMenu addStepMenu = new JMenu("Add to Stepper");
 
-        this.stepper.getUI().getAllStepSetTabs().forEach((title, stepSequenceTab) -> {
+        //Add x items to Stepper menu
+        String addMenuTitle = String.format("Add %d %s to Stepper", messages.length, messages.length == 1 ? "item":"items");
+        JMenu addStepMenu = new JMenu(addMenuTitle);
+
+        for (Map.Entry<String, StepSequenceTab> e : this.stepper.getUI().getAllStepSetTabs().entrySet()) {
+            String title = e.getKey();
+            StepSequenceTab stepSequenceTab = e.getValue();
             JMenuItem item = new JMenuItem(title);
             item.addActionListener(actionEvent -> {
-                stepSequenceTab.getStepSequence().addStep(messages[0]);
+                for (IHttpRequestResponse message : messages) {
+                    stepSequenceTab.getStepSequence().addStep(message);
+                }
             });
             addStepMenu.add(item);
-        });
+        }
 
         JMenuItem newSequence = new JMenuItem("New Sequence");
         newSequence.addActionListener(actionEvent -> {
             String name = JOptionPane.showInputDialog(Stepper.getInstance().getUI().getUiComponent(), "Enter a name to identify the sequence: ", "", JOptionPane.PLAIN_MESSAGE);
             if(name != null) {
                 StepSequence stepSequence = new StepSequence(this.stepper, false, name);
-                stepSequence.addStep(messages[0]);
+                for (IHttpRequestResponse message : messages) {
+                    stepSequence.addStep(message);
+                }
                 this.stepper.addStepSequence(stepSequence);
             }
         });
@@ -54,60 +62,68 @@ public class ContextMenuFactory implements IContextMenuFactory {
 
         menuItems.add(addStepMenu);
 
-        if(invocation.getInvocationContext() == IContextMenuInvocation.CONTEXT_MESSAGE_EDITOR_REQUEST){
-            HashMap<StepSequence, HashMap<String, StepVariable>> sequenceVariableMap = new HashMap<>();
 
-            StepSequenceTab selectedStepSet = stepper.getUI().getSelectedStepSet();
-            boolean isViewingSequenceStep = false;
-            if(selectedStepSet != null){
-                StepPanel selectedStepPanel = selectedStepSet.getSelectedStepPanel();
-                if(selectedStepPanel != null){
-                    isViewingSequenceStep = true;
-                    Step step = selectedStepPanel.getStep();
-                    HashMap<String, StepVariable> stepVariables = selectedStepSet.getStepSequence().getRollingVariablesUpToStep(step);
-                    sequenceVariableMap.put(step.getSequence(), stepVariables);
+        if(invocation.getInvocationContext() == IContextMenuInvocation.CONTEXT_MESSAGE_EDITOR_REQUEST){
+            menuItems.addAll(buildVariableMenuItems());
+        }
+        return menuItems;
+    }
+
+    private List<JMenuItem> buildVariableMenuItems(){
+        List<JMenuItem> menuItems = new ArrayList<>();
+
+        HashMap<StepSequence, HashMap<String, StepVariable>> sequenceVariableMap = new HashMap<>();
+
+        StepSequenceTab selectedStepSet = stepper.getUI().getSelectedStepSet();
+        boolean isViewingSequenceStep = false;
+        if(selectedStepSet != null){
+            StepPanel selectedStepPanel = selectedStepSet.getSelectedStepPanel();
+            if(selectedStepPanel != null){
+                isViewingSequenceStep = true;
+                Step step = selectedStepPanel.getStep();
+                HashMap<String, StepVariable> stepVariables = selectedStepSet.getStepSequence().getRollingVariablesUpToStep(step);
+                sequenceVariableMap.put(step.getSequence(), stepVariables);
+            }
+        }else{
+            //Message editor of another tool. Show all variables!
+            sequenceVariableMap = stepper.getLatestVariablesFromAllSequences();
+        }
+
+        long varCount = sequenceVariableMap.values().stream().mapToInt(HashMap::size).sum();
+
+        if(varCount > 0) {
+            JMenu addStepVariableToClipboardMenu = new JMenu("Add Stepper Variable To Clipboard");
+            JMenuItem insertVariable = new JMenuItem("Insert Stepper Variable At Cursor (NOT IMPLEMENTED)");
+
+            if(isViewingSequenceStep){ //Only variables from a single sequence step
+                Collection<StepVariable> variables = sequenceVariableMap.values().stream()
+                        .map(Map::values).flatMap(Collection::stream).collect(Collectors.toList());
+
+                List<JMenuItem> variableToClipboardMenuItems = buildAddVariableToClipboardMenuItems(variables);
+
+                for (JMenuItem item : variableToClipboardMenuItems) {
+                    addStepVariableToClipboardMenu.add(item);
                 }
             }else{
-                //Message editor of another tool. Show all variables!
-                sequenceVariableMap = stepper.getLatestVariablesFromAllSequences();
-            }
-
-            long varCount = sequenceVariableMap.values().stream().mapToInt(HashMap::size).sum();
-
-            if(varCount > 0) {
-                JMenu addStepVariableToClipboardMenu = new JMenu("Add Stepper Variable To Clipboard");
-                JMenuItem insertVariable = new JMenuItem("Insert Stepper Variable At Cursor (NOT IMPLEMENTED)");
-
-                if(isViewingSequenceStep){ //Only variables from a single sequence step
-                    Collection<StepVariable> variables = sequenceVariableMap.values().stream()
-                            .map(Map::values).flatMap(Collection::stream).collect(Collectors.toList());
-
-                    List<JMenuItem> variableToClipboardMenuItems = buildAddVariableToClipboardMenuItems(variables);
-
-                    for (JMenuItem item : variableToClipboardMenuItems) {
-                        addStepVariableToClipboardMenu.add(item);
-                    }
-                }else{
-                    sequenceVariableMap.forEach(new BiConsumer<StepSequence, HashMap<String, StepVariable>>() {
-                        @Override
-                        public void accept(StepSequence stepSequence, HashMap<String, StepVariable> stringStepVariableHashMap) {
-                            if (stringStepVariableHashMap.size() > 0) {
-                                JMenu sequenceItem = new JMenu(stepSequence.getTitle());
-                                List<JMenuItem> sequenceVariableToClipboardItems = ContextMenuFactory.this.buildAddVariableToClipboardMenuItems(stringStepVariableHashMap.values());
-                                for (JMenuItem item : sequenceVariableToClipboardItems) {
-                                    sequenceItem.add(item);
-                                }
-                                addStepVariableToClipboardMenu.add(sequenceItem);
-                            }
+                for (Map.Entry<StepSequence, HashMap<String, StepVariable>> entry : sequenceVariableMap.entrySet()) {
+                    StepSequence stepSequence = entry.getKey();
+                    HashMap<String, StepVariable> stringStepVariableHashMap = entry.getValue();
+                    if (stringStepVariableHashMap.size() > 0) {
+                        JMenu sequenceItem = new JMenu(stepSequence.getTitle());
+                        List<JMenuItem> sequenceVariableToClipboardItems = ContextMenuFactory.this.buildAddVariableToClipboardMenuItems(stringStepVariableHashMap.values());
+                        for (JMenuItem item : sequenceVariableToClipboardItems) {
+                            sequenceItem.add(item);
                         }
-                    });
+                        addStepVariableToClipboardMenu.add(sequenceItem);
+                    }
                 }
-
-
-                menuItems.add(addStepVariableToClipboardMenu);
-                //Not implemented yet.
-                //menuItems.add(insertVariable);
             }
+
+
+            menuItems.add(addStepVariableToClipboardMenu);
+            //Not implemented yet.
+            //menuItems.a
+            // dd(insertVariable);
         }
         return menuItems;
     }
