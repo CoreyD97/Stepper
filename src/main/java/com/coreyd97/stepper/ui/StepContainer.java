@@ -43,7 +43,9 @@ public class StepContainer extends JPanel implements IStepListener, IStepVariabl
         sequenceGlobalsPanel = new SequenceGlobalsPanel(this.stepSequence);
         tabbedPanel.addTab("Globals", sequenceGlobalsPanel);
         tabbedPanel.addTab("Add Step", null);
-        tabbedPanel.addMouseListener(new MouseAdapter() {
+        CustomTabComponent addStepTab = new CustomTabComponent("Add Step");
+        tabbedPanel.setTabComponentAt(1, addStepTab);
+        addStepTab.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 if(SwingUtilities.isLeftMouseButton(e)){
