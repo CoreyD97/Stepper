@@ -68,7 +68,7 @@ public class StepperUI implements ITab, IStepSequenceListener {
             this.extension.removeStepSet(sequence);
         };
 
-        CustomTabComponent tabComponent = new CustomTabComponent(this.tabbedPane, newTabLocation-1,
+        CustomTabComponent tabComponent = new CustomTabComponent( newTabLocation-1,
                 sequence.getTitle(), false,
                 true, onTitleChange, true, onRemoveClicked);
 
