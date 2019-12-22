@@ -35,13 +35,11 @@ public class ContextMenuFactory implements IContextMenuFactory {
         String addMenuTitle = String.format("Add %d %s to Stepper", messages.length, messages.length == 1 ? "item":"items");
         JMenu addStepMenu = new JMenu(addMenuTitle);
 
-        for (Map.Entry<String, StepSequenceTab> e : this.stepper.getUI().getAllStepSetTabs().entrySet()) {
-            String title = e.getKey();
-            StepSequenceTab stepSequenceTab = e.getValue();
-            JMenuItem item = new JMenuItem(title);
+        for (StepSequence sequence : this.stepper.getSequences()) {
+            JMenuItem item = new JMenuItem(sequence.getTitle());
             item.addActionListener(actionEvent -> {
                 for (IHttpRequestResponse message : messages) {
-                    stepSequenceTab.getStepSequence().addStep(message);
+                    sequence.addStep(message);
                 }
             });
             addStepMenu.add(item);
