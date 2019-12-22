@@ -116,7 +116,8 @@ public class AboutPanel extends JPanel {
                     "4. Optional: Define variables for steps, providing a regular expression which will " +
                     "be used to extract the values from the response.\n" +
                     "   Tip: You can execute a single step to test your regular expressions using the button in the top right.\n" +
-                    "5. Execute the entire sequence using the button at the bottom of the panel.\n\n\n";
+                    "5. Execute the entire sequence using the button at the bottom of the panel.\n\n" +
+                    "Steps can be rearranged by right-clicking their tab, and selecting their destination.\n";
 
             String variableHelpHeader = "Variables:\n";
             String variableHelp = "Variables can be defined for use within a sequence. Variables consist of an " +

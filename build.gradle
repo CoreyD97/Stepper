@@ -15,7 +15,7 @@ repositories {
 
 dependencies {
     compile 'net.portswigger.burp.extender:burp-extender-api:1.7.22'
-    compile 'com.github.CoreyD97:BurpExtenderUtilities:8b5b654ac4d07fb6fcc8f0ae3a9c34ce553d7ea6'
+    compile 'com.github.CoreyD97:BurpExtenderUtilities:4795f41e098f12dd2191de5a4b387050132f344f'
     testCompile files('/opt/BurpSuitePro/burpsuite_pro.jar')
 }
 

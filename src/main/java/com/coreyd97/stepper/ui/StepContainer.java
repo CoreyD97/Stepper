@@ -6,8 +6,7 @@ import com.coreyd97.stepper.*;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
+import java.awt.event.*;
 import java.util.HashMap;
 import java.util.Vector;
 import java.util.function.Consumer;
@@ -75,18 +74,57 @@ public class StepContainer extends JPanel implements IStepListener, IStepVariabl
 
         Consumer<Void> onRemoveClicked = (nothing) -> {
             this.stepSequence.removeStep(step);
-            for (int i = 1; i < tabbedContainer.getTabCount()-1; i++) {
-                CustomTabComponent tab = (CustomTabComponent) tabbedContainer.getTabComponentAt(i);
-                tab.setIndex(i); //Since 0 is globals tab
-            }
+            //Update indices for other tabs
+            updateTabIndices();
         };
 
-        CustomTabComponent tabComponent = new CustomTabComponent(tabbedContainer, newTabLocation,
+        CustomTabComponent tabComponent = new CustomTabComponent(newTabLocation,
                 stepPanel.getStep().getTitle(), true,
                 true, onTitleChanged,true, onRemoveClicked);
-        tabbedContainer.setTabComponentAt(newTabLocation, tabComponent);
+        tabComponent.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if(SwingUtilities.isRightMouseButton(e)){
+                    JPopupMenu popupMenu = new JPopupMenu();
+                    JMenu moveStep = new JMenu("Move Step");
 
+                    int fromIndex = tabbedContainer.indexOfTabComponent(tabComponent);
+                    Component tabBody = tabbedContainer.getComponentAt(fromIndex);
+                    for(int i=1; i<tabbedContainer.getTabCount()-1; i++){ //Start at 1, globals is 0. Stop -1 for "add step" tab
+                        final int toIndex = i;
+                        if(i != fromIndex){
+                            JMenuItem moveTo = new JMenuItem("Index: " + i);
+                            moveTo.addActionListener(new ActionListener() {
+                                @Override
+                                public void actionPerformed(ActionEvent actionEvent) {
+//                                int newIndex = fromIndex < toIndex ? 1 : 2;
+                                    tabbedContainer.setSelectedIndex(0); //Prevent "Add Step" showing and creating new tab
+                                    tabbedContainer.insertTab("TempName", null, tabBody, null, toIndex);
+                                    tabbedContainer.setTabComponentAt(toIndex, tabComponent);
+                                    tabbedContainer.setSelectedIndex(toIndex);
+                                    stepSequence.moveStep(fromIndex - 1, toIndex-1); //Take 1, since globals tab is first
+                                    updateTabIndices();
+                                }
+                            });
+                            moveStep.add(moveTo);
+                        }
+                    }
+
+                    popupMenu.add(moveStep);
+                    popupMenu.show(e.getComponent(), e.getX(), e.getY());
+                }
+            }
+        });
+
+        tabbedContainer.setTabComponentAt(newTabLocation, tabComponent);
         tabbedContainer.setSelectedIndex(newTabLocation);
+    }
+
+    private void updateTabIndices(){
+        for (int i = 1; i < tabbedContainer.getTabCount()-1; i++) {
+            CustomTabComponent tab = (CustomTabComponent) tabbedContainer.getTabComponentAt(i);
+            tab.setIndex(i); //Since 0 is globals tab
+        }
     }
 
     private void removeTabbedEntry(StepPanel stepPanel){

@@ -113,6 +113,14 @@ public class StepSequence
         return this.steps;
     }
 
+    public void moveStep(int from, int to){
+        if(to > from){ //Moving to the right. Take 1 from to index since we'll remove this one first.
+            to--;
+        }
+        Step movedStep = this.steps.remove(from);
+        this.steps.add(to, movedStep);
+    }
+
     public void addStepExecutionListener(IStepExecutionListener listener){
         this.stepExecutionListeners.add(listener);
     }
