@@ -23,6 +23,8 @@ public class Step implements IMessageEditorController, IStepVariableListener {
     private Boolean isSSL;
     private String title;
 
+    private final String matchHack = ("MATCHHACK." + Math.random() + ".coreyd97.com");
+
     private byte[] requestBody;
     private byte[] responseBody;
 
@@ -122,7 +124,9 @@ public class Step implements IMessageEditorController, IStepVariableListener {
 
     @Override
     public byte[] getRequest() {
-        if(this.requestEditor == null) return ("MATCHHACK." + Math.random() + ".coreyd97.com").getBytes();
+        if(this.requestEditor == null) {
+            return matchHack.getBytes();
+        }
         return this.requestEditor.getMessage();
     }
 
