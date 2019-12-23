@@ -73,10 +73,16 @@ public class StepperUI implements ITab, IStepSequenceListener {
     @Override
     public void onStepSequenceRemoved(StepSequence sequence) {
         StepSequenceTab stepSequenceTab = this.getTabForStepManager(sequence);
-        int prevTab = this.tabbedPane.indexOfComponent(stepSequenceTab) - 1;
-        if(prevTab != -1)
-            this.tabbedPane.setSelectedIndex(prevTab);
+        int removedIndex = this.tabbedPane.indexOfComponent(stepSequenceTab);
         this.tabbedPane.remove(stepSequenceTab);
+        this.managerTabMap.remove(sequence);
+
+        if(removedIndex == 0 && this.managerTabMap.size() == 0){ //If we removed the leftmost tab and have no other tabs
+            this.tabbedPane.setSelectedIndex(2); //View the about tab
+        }else if(removedIndex == this.tabbedPane.getTabCount() - 3 && this.managerTabMap.size() > 0) {
+            //If we removed the rightmost tab, but still have other tabs, move to a different tab instead
+            this.tabbedPane.setSelectedIndex(removedIndex-1);
+        }
     }
 
     public StepSequenceTab getTabForStepManager(StepSequence manager){
