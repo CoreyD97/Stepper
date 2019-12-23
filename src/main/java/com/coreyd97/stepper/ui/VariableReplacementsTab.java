@@ -13,6 +13,8 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -112,19 +114,17 @@ public class VariableReplacementsTab implements IMessageEditorTab {//, IStepList
             this.textArea.setText("");
             return;
         }
-        HashMap<String, StepVariable> variables;
+        HashMap<StepSequence, List<StepVariable>> variables;
         if(this.actualController != null){
-            variables = this.actualController.getRollingVariables();
-        }else{
             variables = new HashMap<>();
-            for (StepSequence sequence : Stepper.getInstance().getSequences()) {
-                variables.putAll(sequence.getAllVariables());
-            }
+            variables.put(this.actualController.getSequence(), this.actualController.getRollingVariables());
+        }else{
+            variables = Stepper.getInstance().getRollingVariablesFromAllSequences();
         }
 
         String contentString = new String(content);
         try {
-            replaceAndHighlight(contentString, new ArrayList<>(variables.values()));
+            replaceAndHighlight(contentString, variables);
         } catch (BadLocationException e) {
             StringWriter sw = new StringWriter();
             e.printStackTrace(new PrintWriter(sw));
@@ -135,37 +135,45 @@ public class VariableReplacementsTab implements IMessageEditorTab {//, IStepList
     /**
      * Custom find and replace to identify and highlight regions where replaced.
      */
-    private void replaceAndHighlight(String content, ArrayList<StepVariable> variables) throws BadLocationException {
+    private void replaceAndHighlight(String content, HashMap<StepSequence, List<StepVariable>> sequenceVariables) throws BadLocationException {
         StringBuffer output;
         String contentToSearch = content;
         ArrayList<Integer[]> highlightRanges = new ArrayList<>(); // [ Offset , Length ]
-        for (StepVariable stepVariable : variables) {
-            output = new StringBuffer();
-            Pattern pattern = stepVariable.createIdentifierPattern();
-            String replacement = stepVariable.getLatestValue() != null ? stepVariable.getLatestValue() : "";
-            Matcher m = pattern.matcher(contentToSearch);
-            int replacementCount = 0;
-            while(m.find()){
-                m.appendReplacement(output, replacement);
-                //Offset also takes into account previous found instances that had been replaced.
-                int foundOffset = m.start() + (replacementCount * (replacement.length() - m.group().length()));
-                //Below we use offset after appending to get the length of the unescaped
-                //value appended to the output.
-                int foundLength = Math.abs(output.length()-foundOffset);
+        for (Map.Entry<StepSequence, List<StepVariable>> entry : sequenceVariables.entrySet()) {
+            StepSequence sequence = entry.getKey();
+            List<StepVariable> variables = entry.getValue();
 
-                replacementCount++;
+            for (StepVariable stepVariable : variables) {
+                output = new StringBuffer();
+                Pattern pattern = sequenceVariables.size() == 1 ?
+                        StepVariable.createIdentifierPattern(stepVariable)
+                        : StepVariable.createIdentifierPatternWithSequence(sequence, stepVariable);
 
-                //Shift the existing ranges to accomodate the replacement.
-                for (Integer[] range : highlightRanges) {
-                    if(range[0] >= foundOffset){
-                        range[0] = range[0] - foundLength + replacement.length();
+                String replacement = stepVariable.getLatestValue() != null ? stepVariable.getLatestValue() : "";
+                Matcher m = pattern.matcher(contentToSearch);
+                int replacementCount = 0;
+                while(m.find()){
+                    m.appendReplacement(output, replacement);
+                    //Offset also takes into account previous found instances that had been replaced.
+                    int foundOffset = m.start() + (replacementCount * (replacement.length() - m.group().length()));
+                    //Below we use offset after appending to get the length of the unescaped
+                    //value appended to the output.
+                    int foundLength = Math.abs(output.length()-foundOffset);
+
+                    replacementCount++;
+
+                    //Shift the existing ranges to accomodate the replacement.
+                    for (Integer[] range : highlightRanges) {
+                        if(range[0] >= foundOffset){
+                            range[0] = range[0] - foundLength + replacement.length();
+                        }
                     }
-                }
 
-                highlightRanges.add(new Integer[]{foundOffset, foundLength});
+                    highlightRanges.add(new Integer[]{foundOffset, foundLength});
+                }
+                m.appendTail(output);
+                contentToSearch = output.toString();
             }
-            m.appendTail(output);
-            contentToSearch = output.toString();
         }
 
         output = new StringBuffer();

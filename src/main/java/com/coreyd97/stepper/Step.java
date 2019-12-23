@@ -137,16 +137,16 @@ public class Step implements IMessageEditorController, IStepVariableListener {
     }
 
     public void executeStep() throws SequenceExecutionException {
-        HashMap<String, StepVariable> variables = this.sequence.getRollingVariablesUpToStep(this);
+        List<StepVariable> variables = this.sequence.getRollingVariablesUpToStep(this);
         this.executeStep(variables);
     }
 
-    public void executeStep(HashMap<String, StepVariable> replacements) throws SequenceExecutionException {
+    public void executeStep(List<StepVariable> replacements) throws SequenceExecutionException {
         byte[] requestWithoutReplacements = getRequest();
         byte[] builtRequest;
 
         if(MessageProcessor.hasStepVariable(requestWithoutReplacements)) {
-            if(!MessageProcessor.isProcessable(requestWithoutReplacements)){
+            if(MessageProcessor.isUnprocessable(requestWithoutReplacements)){
                 //If there's unicode issues, we're likely acting on binary data. Warn the user.
                 //TODO STEP SEQUENCE HANDLE BINARY ERRORS.
                 int result = JOptionPane.showConfirmDialog(Stepper.getInstance().getUI().getUiComponent(),
@@ -155,7 +155,7 @@ public class Step implements IMessageEditorController, IStepVariableListener {
                         "Stepper Replacement Error", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
                 if(result == JOptionPane.NO_OPTION) throw new SequenceCancelledException("Binary data, user cancelled.");
             }
-            builtRequest = MessageProcessor.makeReplacements(requestWithoutReplacements, replacements);
+            builtRequest = MessageProcessor.makeReplacementsForSingleSequence(requestWithoutReplacements, replacements);
         }else{
             builtRequest = Arrays.copyOf(requestWithoutReplacements, requestWithoutReplacements.length);
         }
@@ -311,8 +311,8 @@ public class Step implements IMessageEditorController, IStepVariableListener {
         return title;
     }
 
-    public HashMap<String, StepVariable> getRollingVariables() {
-        if(this.sequence == null) return new HashMap<>();
+    public List<StepVariable> getRollingVariables() {
+        if(this.sequence == null) return new ArrayList<>();
         return this.sequence.getRollingVariablesUpToStep(this);
     }
 

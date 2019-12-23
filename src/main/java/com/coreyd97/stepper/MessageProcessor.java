@@ -2,12 +2,12 @@ package com.coreyd97.stepper;
 
 import burp.*;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
-import com.google.gson.Gson;
 
 import javax.swing.*;
-import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -27,22 +27,19 @@ public class MessageProcessor implements IHttpListener {
         return m.find();
     }
 
-    public static boolean isProcessable(byte[] content){
+    public static boolean isUnprocessable(byte[] content){
         //Check for charset decoding errors
-        return new String(content).indexOf('\uFFFD') == -1;
+        return new String(content).indexOf('\uFFFD') != -1;
     }
 
     @Override
     public void processHttpMessage(int toolFlag, boolean messageIsRequest, IHttpRequestResponse messageInfo) {
         if(isValidTool(toolFlag) && messageIsRequest){
-            HashMap<String, StepVariable> allVariables = new HashMap<>();
-            for (StepSequence sequence : stepper.getSequences()) {
-                allVariables.putAll(sequence.getAllVariables());
-            }
+            HashMap<StepSequence, List<StepVariable>> allVariables = stepper.getRollingVariablesFromAllSequences();
 
             if(allVariables.size() > 0 && hasStepVariable(messageInfo.getRequest())) {
 
-                if(!isProcessable(messageInfo.getRequest())){
+                if(isUnprocessable(messageInfo.getRequest())){
                     //If there's unicode issues, we're likely acting on binary data. Warn the user.
                     int result = JOptionPane.showConfirmDialog(this.stepper.getUI().getUiComponent(),
                             "The request contains non UTF characters.\nStepper is able to make the replacements, " +
@@ -81,14 +78,13 @@ public class MessageProcessor implements IHttpListener {
         }
     }
 
-    public static byte[] makeReplacements(byte[] originalContent,
-                                          HashMap<String, StepVariable> replacements) {
+    public static byte[] makeReplacementsForSingleSequence(byte[] originalContent, List<StepVariable> replacements) {
         byte[] request = Arrays.copyOf(originalContent, originalContent.length);
         boolean hasReplaced = false;
 
         String requestString = new String(request);
 
-        for (StepVariable replacement : replacements.values()) {
+        for (StepVariable replacement : replacements) {
             //Find identifier in requestBody and replace with latest value.
             Matcher m = StepVariable.createIdentifierPattern(replacement).matcher(requestString);
             hasReplaced |= m.find();
@@ -96,15 +92,53 @@ public class MessageProcessor implements IHttpListener {
             String replacementValue = replacement.getLatestValue() == null ? "" : replacement.getLatestValue();
             requestString = m.replaceAll(replacementValue);
         }
+
         request = requestString.getBytes();
 
         if(hasReplaced) {
-            //Analyse the request with replacements to identify the headers and body
-            IRequestInfo requestInfo = Stepper.callbacks.getHelpers().analyzeRequest(request);
-            byte[] requestBody = Arrays.copyOfRange(request, requestInfo.getBodyOffset(), request.length);
+//            //Analyse the request with replacements to identify the headers and body
+//            IRequestInfo requestInfo = Stepper.callbacks.getHelpers().analyzeRequest(request);
+//            byte[] requestBody = Arrays.copyOfRange(request, requestInfo.getBodyOffset(), request.length);
+//
+//            //Built request
+//            return Stepper.callbacks.getHelpers().buildHttpMessage(requestInfo.getHeaders(), requestBody);
+            return request;
+        }else{
+            return originalContent;
+        }
+    }
 
-            //Built request
-            return Stepper.callbacks.getHelpers().buildHttpMessage(requestInfo.getHeaders(), requestBody);
+    public static byte[] makeReplacements(byte[] originalContent,
+                                          HashMap<StepSequence, List<StepVariable>> replacements) {
+        byte[] request = Arrays.copyOf(originalContent, originalContent.length);
+        boolean hasReplaced = false;
+
+        String requestString = new String(request);
+
+        for (Map.Entry<StepSequence, List<StepVariable>> sequenceEntry : replacements.entrySet()) {
+            StepSequence sequence = sequenceEntry.getKey();
+            List<StepVariable> variables = sequenceEntry.getValue();
+
+            for (StepVariable replacement : variables) {
+                //Find identifier in requestBody and replace with latest value.
+                Matcher m = StepVariable.createIdentifierPatternWithSequence(sequence, replacement).matcher(requestString);
+                hasReplaced |= m.find();
+
+                String replacementValue = replacement.getLatestValue() == null ? "" : replacement.getLatestValue();
+                requestString = m.replaceAll(replacementValue);
+            }
+        }
+
+        request = requestString.getBytes();
+
+        if(hasReplaced) {
+//            //Analyse the request with replacements to identify the headers and body
+//            IRequestInfo requestInfo = Stepper.callbacks.getHelpers().analyzeRequest(request);
+//            byte[] requestBody = Arrays.copyOfRange(request, requestInfo.getBodyOffset(), request.length);
+//
+//            //Built request
+//            return Stepper.callbacks.getHelpers().buildHttpMessage(requestInfo.getHeaders(), requestBody);
+            return request;
         }else{
             return originalContent;
         }

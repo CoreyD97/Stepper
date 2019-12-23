@@ -102,6 +102,10 @@ public class StepVariable {
         this.listeners.clear();
     }
 
+    public static Pattern createIdentifierPatternWithSequence(String sequence, String identifier){
+        return Pattern.compile(Pattern.quote(createVariableString(sequence, identifier)), Pattern.CASE_INSENSITIVE);
+    }
+
     public static Pattern createIdentifierPattern(String identifier){
         return Pattern.compile(Pattern.quote(createVariableString(identifier)), Pattern.CASE_INSENSITIVE);
     }
@@ -110,23 +114,19 @@ public class StepVariable {
         return createIdentifierPattern(stepVariable.getIdentifier());
     }
 
-    public Pattern createIdentifierPattern(){
-        return StepVariable.createIdentifierPattern(this);
+    public static Pattern createIdentifierPatternWithSequence(StepSequence sequence, StepVariable variable){
+        return createIdentifierPatternWithSequence(sequence.getTitle(), variable.getIdentifier());
     }
 
     public static Pattern createIdentifierCaptureRegex(){
         return Pattern.compile(Pattern.quote(variablePrepend) + "(.*?)" + Pattern.quote(variableAppend));
     }
 
+    public static String createVariableString(String sequence, String identifier){
+        return variablePrepend + sequence + ":" + identifier + variableAppend;
+    }
+
     public static String createVariableString(String identifier){
         return variablePrepend + identifier + variableAppend;
-    }
-
-    public static String createVariableString(StepVariable stepVariable){
-        return createVariableString(stepVariable.getIdentifier());
-    }
-
-    public String createVariableString(){
-        return createVariableString(this.getIdentifier());
     }
 }

@@ -7,14 +7,10 @@ import com.coreyd97.stepper.ui.StepPanel;
 import com.coreyd97.stepper.ui.StepSequenceTab;
 
 import javax.swing.*;
-import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.datatransfer.StringSelection;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.*;
 import java.util.List;
-import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 public class ContextMenuFactory implements IContextMenuFactory {
@@ -72,7 +68,7 @@ public class ContextMenuFactory implements IContextMenuFactory {
     private List<JMenuItem> buildVariableMenuItems(IContextMenuInvocation invocation){
         List<JMenuItem> menuItems = new ArrayList<>();
 
-        HashMap<StepSequence, HashMap<String, StepVariable>> sequenceVariableMap = new HashMap<>();
+        HashMap<StepSequence, List<StepVariable>> sequenceVariableMap = new HashMap<>();
 
         StepSequenceTab selectedStepSet = stepper.getUI().getSelectedStepSet();
         boolean isViewingSequenceStep = false;
@@ -81,15 +77,15 @@ public class ContextMenuFactory implements IContextMenuFactory {
             if(selectedStepPanel != null){
                 isViewingSequenceStep = true;
                 Step step = selectedStepPanel.getStep();
-                HashMap<String, StepVariable> stepVariables = selectedStepSet.getStepSequence().getRollingVariablesUpToStep(step);
+                List<StepVariable> stepVariables = selectedStepSet.getStepSequence().getRollingVariablesUpToStep(step);
                 sequenceVariableMap.put(step.getSequence(), stepVariables);
             }
         }else{
             //Message editor of another tool. Show all variables!
-            sequenceVariableMap = stepper.getLatestVariablesFromAllSequences();
+            sequenceVariableMap = stepper.getRollingVariablesFromAllSequences();
         }
 
-        long varCount = sequenceVariableMap.values().stream().mapToInt(HashMap::size).sum();
+        long varCount = sequenceVariableMap.values().stream().mapToInt(List::size).sum();
 
         if(varCount > 0) {
             JMenu addStepVariableToClipboardMenu = new JMenu("Add Stepper Variable To Clipboard");
@@ -97,20 +93,21 @@ public class ContextMenuFactory implements IContextMenuFactory {
 
             if(isViewingSequenceStep){ //Only variables from a single sequence step
                 Collection<StepVariable> variables = sequenceVariableMap.values().stream()
-                        .map(Map::values).flatMap(Collection::stream).collect(Collectors.toList());
+                        .flatMap(Collection::stream).collect(Collectors.toList());
 
-                List<JMenuItem> variableToClipboardMenuItems = buildAddVariableToClipboardMenuItems(variables);
+                List<JMenuItem> variableToClipboardMenuItems = buildAddVariableToClipboardMenuItems(null, variables);
 
                 for (JMenuItem item : variableToClipboardMenuItems) {
                     addStepVariableToClipboardMenu.add(item);
                 }
             }else{
-                for (Map.Entry<StepSequence, HashMap<String, StepVariable>> entry : sequenceVariableMap.entrySet()) {
+                for (Map.Entry<StepSequence, List<StepVariable>> entry : sequenceVariableMap.entrySet()) {
                     StepSequence stepSequence = entry.getKey();
-                    HashMap<String, StepVariable> stringStepVariableHashMap = entry.getValue();
+                    List<StepVariable> stringStepVariableHashMap = entry.getValue();
                     if (stringStepVariableHashMap.size() > 0) {
                         JMenu sequenceItem = new JMenu(stepSequence.getTitle());
-                        List<JMenuItem> sequenceVariableToClipboardItems = ContextMenuFactory.this.buildAddVariableToClipboardMenuItems(stringStepVariableHashMap.values());
+                        List<JMenuItem> sequenceVariableToClipboardItems =
+                                ContextMenuFactory.this.buildAddVariableToClipboardMenuItems(stepSequence, stringStepVariableHashMap);
                         for (JMenuItem item : sequenceVariableToClipboardItems) {
                             sequenceItem.add(item);
                         }
@@ -124,13 +121,19 @@ public class ContextMenuFactory implements IContextMenuFactory {
         return menuItems;
     }
 
-    private List<JMenuItem> buildAddVariableToClipboardMenuItems(Collection<StepVariable> variables){
+    private List<JMenuItem> buildAddVariableToClipboardMenuItems(StepSequence sequence, Collection<StepVariable> variables){
         List<JMenuItem> menuItems = new ArrayList<>();
         for (StepVariable variable : variables) {
             JMenuItem item = new JMenuItem(variable.getIdentifier());
             item.addActionListener(actionEvent -> {
+                String variableString;
+                if(sequence == null){ //Not sequence specific
+                    variableString = StepVariable.createVariableString(variable.getIdentifier());
+                }else{
+                    variableString = StepVariable.createVariableString(sequence.getTitle(), variable.getIdentifier());
+                }
                 Toolkit.getDefaultToolkit().getSystemClipboard().setContents(
-                        new StringSelection(variable.createVariableString()), null);
+                        new StringSelection(variableString), null);
             });
             menuItems.add(item);
         }

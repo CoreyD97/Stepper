@@ -12,6 +12,7 @@ import com.coreyd97.stepper.ui.VariableReplacementsTabFactory;
 import javax.swing.*;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 public class Stepper implements IBurpExtender {
 
@@ -125,10 +126,10 @@ public class Stepper implements IBurpExtender {
      * E.g. If a variable is defined in step 1 and step n, the variable from step n will be used.
      * @return
      */
-    public HashMap<StepSequence, HashMap<String, StepVariable>> getLatestVariablesFromAllSequences(){
-        HashMap<StepSequence, HashMap<String, StepVariable>> allVariables = new HashMap<>();
+    public HashMap<StepSequence, List<StepVariable>> getRollingVariablesFromAllSequences(){
+        HashMap<StepSequence, List<StepVariable>> allVariables = new HashMap<>();
         for (StepSequence stepSequence : this.stepSequences) {
-            allVariables.put(stepSequence, stepSequence.getAllVariables());
+            allVariables.put(stepSequence, stepSequence.getRollingVariablesForWholeSequence());
         }
         return allVariables;
     }

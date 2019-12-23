@@ -10,9 +10,7 @@ import com.coreyd97.stepper.ui.StepSequenceTab;
 import javax.swing.*;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Vector;
+import java.util.*;
 
 public class StepSequence
 {
@@ -66,18 +64,15 @@ public class StepSequence
 
 
                 try {
-                    HashMap<String, StepVariable> rollingReplacements = new HashMap<>();
                     for (Step step : this.steps) {
 
                         //Set step panel as selected panel
                         StepPanel panel = stepContainer.getPanelForStep(step);
                         stepContainer.setActivePanel(panel);
+                        List<StepVariable> rollingReplacements = this.getRollingVariablesUpToStep(step);
 
                         //Execute the step
                         step.executeStep(rollingReplacements);
-                        for (StepVariable variable : step.getVariables()) {
-                            rollingReplacements.put(variable.getIdentifier(), variable);
-                        }
                         this.stepExecutionListeners.forEach(listener -> listener.stepExecuted(step));
                     }
                 }catch (SequenceCancelledException e){
@@ -150,18 +145,25 @@ public class StepSequence
         }
     }
 
-    public HashMap<String, StepVariable> getRollingVariablesUpToStep(Step uptoStep){
-        HashMap<String, StepVariable> rolling = new HashMap<>();
+    /**
+     * Returns all variables up to and excluding the given step.
+     * If a variable is overwritten in a later step, only includes the latest instance.
+     * @return List of all variables
+     */
+    public List<StepVariable> getRollingVariablesUpToStep(Step uptoStep){
+        LinkedHashMap<String, StepVariable> rolling = new LinkedHashMap<>();
         for (StepVariable variable : this.sequenceGlobals.getVariables()) {
             rolling.put(variable.getIdentifier(), variable);
         }
+
         for (Step step : this.steps) {
             if(uptoStep == step) break;
             for (StepVariable variable : step.getVariables()) {
                 rolling.put(variable.getIdentifier(), variable);
             }
         }
-        return rolling;
+
+        return new ArrayList<>(rolling.values());
     }
 
     public void addStep(IHttpRequestResponse requestResponse) {
@@ -172,18 +174,13 @@ public class StepSequence
         addStep(step);
     }
 
-    public HashMap<String, StepVariable> getAllVariables() {
-        HashMap<String, StepVariable> allVariables = new HashMap<>();
-        for (StepVariable variable : this.sequenceGlobals.getVariables()) {
-            allVariables.put(variable.getIdentifier(), variable);
-        }
-        for (Step step : this.steps) {
-            for (StepVariable variable : step.getVariables()) {
-                allVariables.put(variable.getIdentifier(), variable);
-            }
-        }
-
-        return allVariables;
+    /**
+     * Returns all variables, if a variable is overwritten in a later step.
+     * Only includes the latest instance
+     * @return List of all variables
+     */
+    public List<StepVariable> getRollingVariablesForWholeSequence() {
+        return getRollingVariablesUpToStep(null); //Null for whole sequence
     }
 
     public Step getOriginatingStep(StepVariable variable){
