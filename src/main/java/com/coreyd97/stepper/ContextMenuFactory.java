@@ -3,8 +3,12 @@ package com.coreyd97.stepper;
 import burp.IContextMenuFactory;
 import burp.IContextMenuInvocation;
 import burp.IHttpRequestResponse;
-import com.coreyd97.stepper.ui.StepPanel;
-import com.coreyd97.stepper.ui.StepSequenceTab;
+import com.coreyd97.stepper.sequence.StepSequence;
+import com.coreyd97.stepper.sequencemanager.SequenceManager;
+import com.coreyd97.stepper.step.Step;
+import com.coreyd97.stepper.step.view.StepPanel;
+import com.coreyd97.stepper.sequence.view.StepSequenceTab;
+import com.coreyd97.stepper.variable.StepVariable;
 
 import javax.swing.*;
 import java.awt.*;
@@ -15,10 +19,10 @@ import java.util.stream.Collectors;
 
 public class ContextMenuFactory implements IContextMenuFactory {
 
-    private final Stepper stepper;
+    private final SequenceManager sequenceManager;
 
-    public ContextMenuFactory(Stepper stepper){
-        this.stepper = stepper;
+    public ContextMenuFactory(SequenceManager sequenceManager){
+        this.sequenceManager = sequenceManager;
     }
 
     @Override
@@ -31,7 +35,7 @@ public class ContextMenuFactory implements IContextMenuFactory {
         String addMenuTitle = String.format("Add %d %s to Stepper", messages.length, messages.length == 1 ? "item":"items");
         JMenu addStepMenu = new JMenu(addMenuTitle);
 
-        for (StepSequence sequence : this.stepper.getSequences()) {
+        for (StepSequence sequence : this.sequenceManager.getSequences()) {
             JMenuItem item = new JMenuItem(sequence.getTitle());
             item.addActionListener(actionEvent -> {
                 for (IHttpRequestResponse message : messages) {
@@ -43,13 +47,13 @@ public class ContextMenuFactory implements IContextMenuFactory {
 
         JMenuItem newSequence = new JMenuItem("New Sequence");
         newSequence.addActionListener(actionEvent -> {
-            String name = JOptionPane.showInputDialog(Stepper.getInstance().getUI().getUiComponent(), "Enter a name to identify the sequence: ", "", JOptionPane.PLAIN_MESSAGE);
+            String name = JOptionPane.showInputDialog(Stepper.getUI().getUiComponent(), "Enter a name to identify the sequence: ", "", JOptionPane.PLAIN_MESSAGE);
             if(name != null) {
-                StepSequence stepSequence = new StepSequence(this.stepper, false, name);
+                StepSequence stepSequence = new StepSequence(false, name);
                 for (IHttpRequestResponse message : messages) {
                     stepSequence.addStep(message);
                 }
-                this.stepper.addStepSequence(stepSequence);
+                this.sequenceManager.addStepSequence(stepSequence);
             }
         });
 
@@ -70,7 +74,7 @@ public class ContextMenuFactory implements IContextMenuFactory {
 
         HashMap<StepSequence, List<StepVariable>> sequenceVariableMap = new HashMap<>();
 
-        StepSequenceTab selectedStepSet = stepper.getUI().getSelectedStepSet();
+        StepSequenceTab selectedStepSet = Stepper.getUI().getSelectedStepSet();
         boolean isViewingSequenceStep = false;
         if(selectedStepSet != null){
             StepPanel selectedStepPanel = selectedStepSet.getSelectedStepPanel();
@@ -82,7 +86,7 @@ public class ContextMenuFactory implements IContextMenuFactory {
             }
         }else{
             //Message editor of another tool. Show all variables!
-            sequenceVariableMap = stepper.getRollingVariablesFromAllSequences();
+            sequenceVariableMap = sequenceManager.getRollingVariablesFromAllSequences();
         }
 
         long varCount = sequenceVariableMap.values().stream().mapToInt(List::size).sum();

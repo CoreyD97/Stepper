@@ -2,6 +2,9 @@ package com.coreyd97.stepper;
 
 import burp.*;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
+import com.coreyd97.stepper.sequence.StepSequence;
+import com.coreyd97.stepper.sequencemanager.SequenceManager;
+import com.coreyd97.stepper.variable.StepVariable;
 
 import javax.swing.*;
 import java.util.Arrays;
@@ -13,11 +16,11 @@ import java.util.regex.Pattern;
 
 public class MessageProcessor implements IHttpListener {
 
-    private final Stepper stepper;
+    private final SequenceManager sequenceManager;
     private final Preferences preferences;
 
-    public MessageProcessor(Stepper stepper, Preferences preferences){
-        this.stepper = stepper;
+    public MessageProcessor(SequenceManager sequenceManager, Preferences preferences){
+        this.sequenceManager = sequenceManager;
         this.preferences = preferences;
     }
 
@@ -35,13 +38,13 @@ public class MessageProcessor implements IHttpListener {
     @Override
     public void processHttpMessage(int toolFlag, boolean messageIsRequest, IHttpRequestResponse messageInfo) {
         if(isValidTool(toolFlag) && messageIsRequest){
-            HashMap<StepSequence, List<StepVariable>> allVariables = stepper.getRollingVariablesFromAllSequences();
+            HashMap<StepSequence, List<StepVariable>> allVariables = sequenceManager.getRollingVariablesFromAllSequences();
 
             if(allVariables.size() > 0 && hasStepVariable(messageInfo.getRequest())) {
 
                 if(isUnprocessable(messageInfo.getRequest())){
                     //If there's unicode issues, we're likely acting on binary data. Warn the user.
-                    int result = JOptionPane.showConfirmDialog(this.stepper.getUI().getUiComponent(),
+                    int result = JOptionPane.showConfirmDialog(Stepper.getUI().getUiComponent(),
                             "The request contains non UTF characters.\nStepper is able to make the replacements, " +
                                     "but some of the binary data may be lost. Continue?",
                             "Stepper Replacement Error", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);

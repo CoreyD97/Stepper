@@ -2,35 +2,42 @@ package com.coreyd97.stepper;
 
 import burp.IExtensionStateListener;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
+import com.coreyd97.stepper.sequence.StepSequence;
+import com.coreyd97.stepper.sequencemanager.listener.StepSequenceListener;
+import com.coreyd97.stepper.sequencemanager.SequenceManager;
+import com.coreyd97.stepper.step.Step;
+import com.coreyd97.stepper.step.listener.StepListener;
+import com.coreyd97.stepper.variable.StepVariable;
+import com.coreyd97.stepper.variable.listener.IStepVariableListener;
 
 import java.util.ArrayList;
 
-public class StateManager implements IStepSequenceListener, IStepListener, IStepVariableListener, IExtensionStateListener {
+public class StateManager implements StepSequenceListener, StepListener, IStepVariableListener, IExtensionStateListener {
 
-    private Stepper stepper;
+    private SequenceManager sequenceManager;
     private Preferences preferences;
 
-    public StateManager(Stepper stepper, Preferences preferences){
-        this.stepper = stepper;
+    public StateManager(SequenceManager sequenceManager, Preferences preferences){
+        this.sequenceManager = sequenceManager;
         this.preferences = preferences;
     }
 
     public void saveCurrentSequences(){
-        this.preferences.setSetting(Globals.PREF_STEP_SEQUENCES, this.stepper.getSequences());
+        this.preferences.setSetting(Globals.PREF_STEP_SEQUENCES, this.sequenceManager.getSequences());
     }
 
     public void loadSavedSequences(){
         ArrayList<StepSequence> stepSequences = this.preferences.getSetting(Globals.PREF_STEP_SEQUENCES);
         if(stepSequences != null) {
             for (StepSequence stepSequence : stepSequences) {
-                this.stepper.addStepSequence(stepSequence);
+                this.sequenceManager.addStepSequence(stepSequence);
             }
         }
     }
 
     @Override
     public void onStepSequenceAdded(StepSequence sequence) {
-        sequence.addStepListener(this, false);
+        sequence.addStepListener(this);
         sequence.getSequenceGlobals().addVariableListener(this);
         saveCurrentSequences();
     }
