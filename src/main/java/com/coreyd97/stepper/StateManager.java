@@ -8,11 +8,11 @@ import com.coreyd97.stepper.sequencemanager.SequenceManager;
 import com.coreyd97.stepper.step.Step;
 import com.coreyd97.stepper.step.listener.StepListener;
 import com.coreyd97.stepper.variable.StepVariable;
-import com.coreyd97.stepper.variable.listener.IStepVariableListener;
+import com.coreyd97.stepper.variable.listener.StepVariableListener;
 
 import java.util.ArrayList;
 
-public class StateManager implements StepSequenceListener, StepListener, IStepVariableListener, IExtensionStateListener {
+public class StateManager implements StepSequenceListener, StepListener, StepVariableListener, IExtensionStateListener {
 
     private SequenceManager sequenceManager;
     private Preferences preferences;
@@ -38,7 +38,7 @@ public class StateManager implements StepSequenceListener, StepListener, IStepVa
     @Override
     public void onStepSequenceAdded(StepSequence sequence) {
         sequence.addStepListener(this);
-        sequence.getSequenceGlobals().addVariableListener(this);
+        sequence.getGlobalVariableManager().addVariableListener(this);
         saveCurrentSequences();
     }
 
@@ -50,19 +50,19 @@ public class StateManager implements StepSequenceListener, StepListener, IStepVa
     @Override
     public void onStepSequenceRemoved(StepSequence sequence) {
         sequence.removeStepListener(this);
-        sequence.getSequenceGlobals().removeVariableListener(this);
+        sequence.getGlobalVariableManager().removeVariableListener(this);
         saveCurrentSequences();
     }
 
     @Override
     public void onStepAdded(Step step) {
-        step.addVariableListener(this);
         saveCurrentSequences();
+        step.getVariableManager().addVariableListener(this);
     }
 
     @Override
     public void onStepRemoved(Step step) {
-        step.removeVariableListener(this);
+        step.getVariableManager().removeVariableListener(this);
         saveCurrentSequences();
     }
 
@@ -74,11 +74,10 @@ public class StateManager implements StepSequenceListener, StepListener, IStepVa
     @Override
     public void onVariableRemoved(StepVariable variable) {
         saveCurrentSequences();
-        variable.removeVariableListener(this);
     }
 
     @Override
-    public void onVariableChange(StepVariable variable, StepVariable.ChangeType origin) {
+    public void onVariableChange(StepVariable variable) {
         saveCurrentSequences();
     }
 

@@ -1,26 +1,26 @@
 package com.coreyd97.stepper.step.view;
 
 import com.coreyd97.stepper.step.Step;
+import com.coreyd97.stepper.variable.VariableManager;
 import com.coreyd97.stepper.variable.StepVariable;
-import com.coreyd97.stepper.variable.listener.IStepVariableListener;
-import com.coreyd97.stepper.util.view.PatternEditor;
-import com.coreyd97.stepper.util.view.PatternRenderer;
+import com.coreyd97.stepper.variable.listener.StepVariableListener;
+import com.coreyd97.stepper.util.view.StepVariableEditor;
+import com.coreyd97.stepper.util.view.StepVariableRenderer;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
 import java.awt.*;
-import java.util.Vector;
 
-public class VariableTable extends JTable implements IStepVariableListener {
+public class VariableTable extends JTable {
 
     private Step step;
 
     public VariableTable(Step step){
         super();
         this.step = step;
-        this.setModel(new VariableTableModel(this.step.getVariables()));
-        this.getColumnModel().getColumn(1).setCellRenderer(new PatternRenderer());
-        this.setDefaultEditor(StepVariable.class, new PatternEditor());
+        this.setModel(new VariableTableModel(this.step.getVariableManager()));
+        this.getColumnModel().getColumn(1).setCellRenderer(new StepVariableRenderer());
+        this.setDefaultEditor(StepVariable.class, new StepVariableEditor());
         this.createDefaultTableHeader();
 
         FontMetrics metrics = this.getFontMetrics(this.getFont());
@@ -28,34 +28,15 @@ public class VariableTable extends JTable implements IStepVariableListener {
         this.setRowHeight( fontHeight + 10 );
 
         this.putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
-
-        //Watch the step for any added/removed variables. Will also subscribe to existing.
-        this.step.addVariableListener(this);
-
     }
 
-    @Override
-    public void onVariableAdded(StepVariable variable) {
-        ((VariableTableModel) this.getModel()).fireTableDataChanged();
-        variable.addVariableListener(this); //Listen to any future changes
-    }
+    private class VariableTableModel extends AbstractTableModel implements StepVariableListener {
 
-    @Override
-    public void onVariableRemoved(StepVariable variable) {
-        ((VariableTableModel) this.getModel()).fireTableDataChanged();
-    }
+        private final VariableManager variableManager;
 
-    @Override
-    public void onVariableChange(StepVariable variable, StepVariable.ChangeType origin) {
-        ((VariableTableModel) this.getModel()).fireTableDataChanged();
-    }
-
-    private class VariableTableModel extends AbstractTableModel {
-
-        private final Vector<StepVariable> variables;
-
-        private VariableTableModel(Vector<StepVariable> variables){
-            this.variables = variables;
+        private VariableTableModel(VariableManager variableManager){
+            this.variableManager = variableManager;
+            this.variableManager.addVariableListener(this);
         }
 
         @Override
@@ -72,7 +53,7 @@ public class VariableTable extends JTable implements IStepVariableListener {
         public String getColumnName(int i) {
             switch(i){
                 case 0: return "Identifier";
-                case 1: return "Regex";
+                case 1: return "Condition";
                 case 2: return "Value";
                 default: return "N/A";
             }
@@ -86,7 +67,7 @@ public class VariableTable extends JTable implements IStepVariableListener {
 
         @Override
         public int getRowCount() {
-            return variables.size();
+            return variableManager.getVariables().size();
         }
 
         @Override
@@ -96,11 +77,11 @@ public class VariableTable extends JTable implements IStepVariableListener {
 
         @Override
         public Object getValueAt(int row, int col) {
-            StepVariable variable = variables.get(row);
+            StepVariable variable = variableManager.getVariables().get(row);
             switch (col){
                 case 0: return variable.getIdentifier();
                 case 1: return variable;
-                case 2: return variable.getLatestValue();
+                case 2: return variable.getValue();
             }
 
             return "";
@@ -108,11 +89,26 @@ public class VariableTable extends JTable implements IStepVariableListener {
 
         @Override
         public void setValueAt(Object value, int row, int col) {
-            StepVariable var = this.variables.get(row);
+            StepVariable var = this.variableManager.getVariables().get(row);
             switch (col){
                 case 0: var.setIdentifier((String) value); break;
-                case 1: var.setRegexString((String) value); break;
+                case 1: var.setCondition((String) value); break;
             }
+            this.fireTableDataChanged();
+        }
+
+        @Override
+        public void onVariableAdded(StepVariable variable) {
+            this.fireTableDataChanged();
+        }
+
+        @Override
+        public void onVariableRemoved(StepVariable variable) {
+            this.fireTableDataChanged();
+        }
+
+        @Override
+        public void onVariableChange(StepVariable variable) {
             this.fireTableDataChanged();
         }
     }

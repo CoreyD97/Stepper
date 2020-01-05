@@ -6,19 +6,23 @@ import com.coreyd97.stepper.exception.SequenceCancelledException;
 import com.coreyd97.stepper.exception.SequenceExecutionException;
 import com.coreyd97.stepper.sequence.listener.SequenceExecutionAdapter;
 import com.coreyd97.stepper.sequence.StepSequence;
+import com.coreyd97.stepper.sequence.view.SequenceContainer;
 import com.coreyd97.stepper.step.Step;
 import com.coreyd97.stepper.step.StepExecutionInfo;
 import com.coreyd97.stepper.step.listener.StepExecutionAdapter;
 import com.coreyd97.stepper.step.listener.StepExecutionListener;
+import com.coreyd97.stepper.variable.StepVariable;
+import com.coreyd97.stepper.variable.listener.StepVariableListener;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
+import java.util.List;
 
-public class StepPanel extends JPanel {
+public class StepPanel extends JPanel implements StepVariableListener {
 
-    private final StepSequence stepSequence;
+    private final SequenceContainer sequenceContainer;
     private final Step step;
 
     private IMessageEditor requestEditor;
@@ -34,9 +38,9 @@ public class StepPanel extends JPanel {
     private JSpinner httpPortSpinner;
     private JCheckBox httpIsSecure;
 
-    public StepPanel(StepSequence sequence, Step step){
+    public StepPanel(SequenceContainer sequenceContainer, Step step){
         super(new BorderLayout());
-        this.stepSequence = sequence;
+        this.sequenceContainer = sequenceContainer;
         this.step = step;
 
         //During message editor creation, the VariableReplacementTab will be matched with the actual
@@ -76,7 +80,7 @@ public class StepPanel extends JPanel {
         JPanel variableWrapper = new JPanel(new BorderLayout());
         JScrollPane variableScrollPane = new JScrollPane(variableTable);
         variableWrapper.add(variableScrollPane, BorderLayout.CENTER);
-        variableWrapper.add(new VariableControlPanel(step, variableTable), BorderLayout.SOUTH);
+        variableWrapper.add(new VariableControlPanel(step.getVariableManager(), variableTable), BorderLayout.SOUTH);
         variableWrapper.setPreferredSize(new Dimension(300,150));
 
         this.mainSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, reqRespSplitPane, variableWrapper);
@@ -90,7 +94,10 @@ public class StepPanel extends JPanel {
                 try {
                     step.executeStep();
                 }catch (SequenceCancelledException ignored){
-                }catch (SequenceExecutionException e){
+                }catch (SequenceExecutionException e) {
+                    JOptionPane.showMessageDialog(this, e.getMessage(),
+                            "Step Error", JOptionPane.ERROR_MESSAGE);
+                }catch (Exception e){
                     JOptionPane.showMessageDialog(this, e.getMessage(),
                             "Step Error", JOptionPane.ERROR_MESSAGE);
                 }finally {
@@ -169,5 +176,20 @@ public class StepPanel extends JPanel {
 
     public Step getStep() {
         return step;
+    }
+
+    @Override
+    public void onVariableAdded(StepVariable variable) {
+        this.sequenceContainer.updateSubsequentPanels(this);
+    }
+
+    @Override
+    public void onVariableRemoved(StepVariable variable) {
+        this.sequenceContainer.updateSubsequentPanels(this);
+    }
+
+    @Override
+    public void onVariableChange(StepVariable variable) {
+        this.sequenceContainer.updateSubsequentPanels(this);
     }
 }

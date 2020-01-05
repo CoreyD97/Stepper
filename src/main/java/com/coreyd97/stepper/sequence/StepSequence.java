@@ -1,51 +1,50 @@
 package com.coreyd97.stepper.sequence;
 
 import burp.IHttpRequestResponse;
-import com.coreyd97.stepper.*;
+import com.coreyd97.stepper.Stepper;
 import com.coreyd97.stepper.exception.SequenceCancelledException;
 import com.coreyd97.stepper.exception.SequenceExecutionException;
-import com.coreyd97.stepper.sequence.globals.SequenceGlobals;
 import com.coreyd97.stepper.sequence.listener.SequenceExecutionListener;
+import com.coreyd97.stepper.sequence.view.SequenceContainer;
+import com.coreyd97.stepper.sequence.view.StepSequenceTab;
 import com.coreyd97.stepper.step.Step;
 import com.coreyd97.stepper.step.StepExecutionInfo;
-import com.coreyd97.stepper.sequence.view.StepContainer;
+import com.coreyd97.stepper.variable.VariableManager;
 import com.coreyd97.stepper.step.listener.StepListener;
 import com.coreyd97.stepper.step.view.StepPanel;
-import com.coreyd97.stepper.sequence.view.StepSequenceTab;
 import com.coreyd97.stepper.variable.StepVariable;
 
 import javax.swing.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Vector;
 
 public class StepSequence
 {
     private String title;
-    private SequenceGlobals sequenceGlobals;
+    private VariableManager globalVariablesManager;
     private Vector<Step> steps;
     private final ArrayList<StepListener> stepListeners;
     private final ArrayList<SequenceExecutionListener> sequenceExecutionListeners;
 
-    public StepSequence(boolean createFirstStep, String title){
-        this(createFirstStep);
+    public StepSequence(String title){
+        this.steps = new Vector<>();
+        this.stepListeners = new ArrayList<>();
+        this.globalVariablesManager = new GlobalVariableManager(this);
+        this.sequenceExecutionListeners = new ArrayList<>();
         this.title = title;
     }
 
-    public StepSequence(boolean createFirstStep){
-        this.sequenceGlobals = new SequenceGlobals();
-        this.steps = new Vector<>();
-        this.stepListeners = new ArrayList<>();
-        this.sequenceExecutionListeners = new ArrayList<>();
-        this.title = "Step Sequence";
-        if(createFirstStep){
-            this.addStep();
-        }
+    public StepSequence(){
+        this("Step Sequence");
     }
 
     public void executeSteps(){
         new Thread(() -> {
             synchronized (StepSequence.this) {
                 StepSequenceTab tabUI = Stepper.getUI().getTabForStepManager(this);
-                StepContainer stepContainer = tabUI.getStepsContainer();
+                SequenceContainer sequenceContainer = tabUI.getStepsContainer();
 
                 for (SequenceExecutionListener stepListener : this.sequenceExecutionListeners) {
                     stepListener.beforeSequenceStart(this.steps);
@@ -53,7 +52,7 @@ public class StepSequence
                 for (Step step : this.steps) {
                     //Since we can't add a listener to the messageEditors, we must update
                     //Our request content before executing instead :(
-                    StepPanel panel = stepContainer.getPanelForStep(step);
+                    StepPanel panel = sequenceContainer.getPanelForStep(step);
                     step.setRequestBody(panel.getRequestEditor().getMessage());
 
                     if(!step.isReadyToExecute()){
@@ -69,8 +68,8 @@ public class StepSequence
                 try {
                     for (Step step : this.steps) {
                         //Set step panel as selected panel
-                        StepPanel panel = stepContainer.getPanelForStep(step);
-                        stepContainer.setActivePanel(panel);
+                        StepPanel panel = sequenceContainer.getPanelForStep(step);
+                        sequenceContainer.setActivePanel(panel);
                         List<StepVariable> rollingReplacements = this.getRollingVariablesUpToStep(step);
 
                         //Execute the step
@@ -107,6 +106,27 @@ public class StepSequence
         this.addStep(new Step(this));
     }
 
+    public void addStep(IHttpRequestResponse requestResponse) {
+        Step step = new Step(this);
+        step.setRequestBody(requestResponse.getRequest());
+        step.setResponseBody(requestResponse.getResponse());
+        step.setHttpService(requestResponse.getHttpService());
+        addStep(step);
+    }
+
+    public void stepModified(Step step){
+        for (StepListener stepListener : this.stepListeners) {
+            stepListener.onStepUpdated(step);
+        }
+    }
+
+    public void removeStep(Step step) {
+        if(!this.steps.remove(step)) throw new IllegalArgumentException("Step not valid for sequence");
+        for (StepListener stepListener : this.stepListeners) {
+            stepListener.onStepRemoved(step);
+        }
+    }
+
     public Vector<Step> getSteps() {
         return this.steps;
     }
@@ -135,43 +155,6 @@ public class StepSequence
         this.stepListeners.remove(listener);
     }
 
-    public void removeStep(Step step) {
-        if(!this.steps.remove(step)) return; //If step not removed, ignore.
-        step.dispose(); //Remove listener references
-        for (StepListener stepListener : this.stepListeners) {
-            stepListener.onStepRemoved(step);
-        }
-    }
-
-    /**
-     * Returns all variables up to and excluding the given step.
-     * If a variable is overwritten in a later step, only includes the latest instance.
-     * @return List of all variables
-     */
-    public List<StepVariable> getRollingVariablesUpToStep(Step uptoStep){
-        LinkedHashMap<String, StepVariable> rolling = new LinkedHashMap<>();
-        for (StepVariable variable : this.sequenceGlobals.getVariables()) {
-            rolling.put(variable.getIdentifier(), variable);
-        }
-
-        for (Step step : this.steps) {
-            if(uptoStep == step) break;
-            for (StepVariable variable : step.getVariables()) {
-                rolling.put(variable.getIdentifier(), variable);
-            }
-        }
-
-        return new ArrayList<>(rolling.values());
-    }
-
-    public void addStep(IHttpRequestResponse requestResponse) {
-        Step step = new Step(this);
-        step.setRequestBody(requestResponse.getRequest());
-        step.setResponseBody(requestResponse.getResponse());
-        step.setHttpService(requestResponse.getHttpService());
-        addStep(step);
-    }
-
     /**
      * Returns all variables, if a variable is overwritten in a later step.
      * Only includes the latest instance
@@ -181,11 +164,25 @@ public class StepSequence
         return getRollingVariablesUpToStep(null); //Null for whole sequence
     }
 
-    public Step getOriginatingStep(StepVariable variable){
-        for (Step step : this.steps) {
-            if(step.getVariables().contains(variable)) return step;
+    /**
+     * Returns all variables up to and excluding the given step.
+     * If a variable is overwritten in a later step, only includes the latest instance.
+     * @return List of all variables
+     */
+    public List<StepVariable> getRollingVariablesUpToStep(Step uptoStep){
+        LinkedHashMap<String, StepVariable> rolling = new LinkedHashMap<>();
+        for (StepVariable variable : this.globalVariablesManager.getVariables()) {
+            rolling.put(variable.getIdentifier(), variable);
         }
-        return null;
+
+        for (Step step : this.steps) {
+            if(uptoStep == step) break;
+            for (StepVariable variable : step.getVariableManager().getVariables()) {
+                rolling.put(variable.getIdentifier(), variable);
+            }
+        }
+
+        return new ArrayList<>(rolling.values());
     }
 
     public ArrayList<StepListener> getStepListeners() {
@@ -200,11 +197,7 @@ public class StepSequence
         this.title = title;
     }
 
-    public SequenceGlobals getSequenceGlobals() {
-        return this.sequenceGlobals;
-    }
-
-    public void setSequenceGlobals(SequenceGlobals sequenceGlobals) {
-        this.sequenceGlobals = sequenceGlobals;
+    public VariableManager getGlobalVariableManager() {
+        return this.globalVariablesManager;
     }
 }

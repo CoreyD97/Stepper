@@ -1,22 +1,21 @@
 package com.coreyd97.stepper.sequence.view;
 
-import com.coreyd97.stepper.sequence.globals.SequenceGlobals;
-import com.coreyd97.stepper.variable.listener.IStepVariableListener;
 import com.coreyd97.stepper.variable.StepVariable;
+import com.coreyd97.stepper.variable.VariableManager;
+import com.coreyd97.stepper.variable.listener.StepVariableListener;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
 import java.awt.*;
-import java.util.Vector;
 
-public class SequenceGlobalsTable extends JTable implements IStepVariableListener {
+public class SequenceGlobalsTable extends JTable implements StepVariableListener {
 
-    private SequenceGlobals sequenceGlobals;
+    private VariableManager sequenceGlobals;
 
-    public SequenceGlobalsTable(SequenceGlobals sequenceGlobals){
+    public SequenceGlobalsTable(VariableManager globalVariableManager){
         super();
-        this.sequenceGlobals = sequenceGlobals;
-        this.setModel(new VariableTableModel(sequenceGlobals.getVariables()));
+        this.sequenceGlobals = globalVariableManager;
+        this.setModel(new VariableTableModel(globalVariableManager));
         this.createDefaultTableHeader();
 
         FontMetrics metrics = this.getFontMetrics(this.getFont());
@@ -39,16 +38,16 @@ public class SequenceGlobalsTable extends JTable implements IStepVariableListene
     }
 
     @Override
-    public void onVariableChange(StepVariable variable, StepVariable.ChangeType origin) {
+    public void onVariableChange(StepVariable variable) {
         ((VariableTableModel) this.getModel()).fireTableDataChanged();
     }
 
     private class VariableTableModel extends AbstractTableModel {
 
-        private final Vector<StepVariable> variables;
+        private final VariableManager globalVariableManager;
 
-        private VariableTableModel(Vector<StepVariable> variables){
-            this.variables = variables;
+        private VariableTableModel(VariableManager globalVariableManager){
+            this.globalVariableManager = globalVariableManager;
         }
 
         @Override
@@ -72,7 +71,7 @@ public class SequenceGlobalsTable extends JTable implements IStepVariableListene
 
         @Override
         public int getRowCount() {
-            return variables.size();
+            return globalVariableManager.getVariables().size();
         }
 
         @Override
@@ -82,10 +81,10 @@ public class SequenceGlobalsTable extends JTable implements IStepVariableListene
 
         @Override
         public Object getValueAt(int row, int col) {
-            StepVariable variable = variables.get(row);
+            StepVariable variable = globalVariableManager.getVariables().get(row);
             switch (col){
                 case 0: return variable.getIdentifier();
-                case 1: return variable.getLatestValue();
+                case 1: return variable.getValue();
             }
 
             return "";
@@ -93,10 +92,10 @@ public class SequenceGlobalsTable extends JTable implements IStepVariableListene
 
         @Override
         public void setValueAt(Object value, int row, int col) {
-            StepVariable var = this.variables.get(row);
+            StepVariable var = globalVariableManager.getVariables().get(row);
             switch (col){
                 case 0: var.setIdentifier((String) value); break;
-                case 1: var.setLatestValue((String) value); break;
+                case 1: var.setValue((String) value); break;
             }
         }
     }

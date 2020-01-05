@@ -5,7 +5,7 @@ import burp.IBurpExtenderCallbacks;
 import com.coreyd97.BurpExtenderUtilities.DefaultGsonProvider;
 import com.coreyd97.BurpExtenderUtilities.IGsonProvider;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
-import com.coreyd97.stepper.preferences.view.StepperPreferenceFactory;
+import com.coreyd97.stepper.preferences.StepperPreferenceFactory;
 import com.coreyd97.stepper.sequencemanager.SequenceManager;
 import com.coreyd97.stepper.util.variablereplacementstab.VariableReplacementsTabFactory;
 

@@ -1,11 +1,13 @@
 package com.coreyd97.stepper.step.serializer;
 
+import com.coreyd97.stepper.variable.RegexVariable;
 import com.coreyd97.stepper.variable.StepVariable;
 import com.coreyd97.stepper.step.Step;
 import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
 
 import java.lang.reflect.Type;
+import java.util.List;
 import java.util.Vector;
 
 public class StepSerializer implements JsonSerializer<Step>, JsonDeserializer<Step> {
@@ -19,11 +21,10 @@ public class StepSerializer implements JsonSerializer<Step>, JsonDeserializer<St
         step.setPort(jsonObject.get("port") != null ? jsonObject.get("port").getAsInt() : 443 );
         step.setSSL(jsonObject.get("ssl") == null || jsonObject.get("ssl").getAsBoolean());
         step.setRequestBody(jsonObject.get("request") != null ? jsonObject.get("request").getAsString().getBytes() : "".getBytes());
-        Vector<StepVariable> variables = context.deserialize(
-                jsonObject.getAsJsonArray("variables"),
-                new TypeToken<Vector<StepVariable>>(){}.getType());
+        List<StepVariable> variables = context.deserialize(
+                jsonObject.getAsJsonArray("variables"), new TypeToken<List<StepVariable>>(){}.getType());
         for (StepVariable variable : variables) {
-            step.addVariable(variable);
+            step.getVariableManager().addVariable(variable);
         }
         return step;
     }
@@ -36,7 +37,7 @@ public class StepSerializer implements JsonSerializer<Step>, JsonDeserializer<St
         json.addProperty("port", src.getPort());
         json.addProperty("ssl", src.isSSL());
         json.addProperty("request", new String(src.getRequest()));
-        json.add("variables", context.serialize(src.getVariables(), new TypeToken<Vector<StepVariable>>(){}.getType()));
+        json.add("variables", context.serialize(src.getVariableManager().getVariables(), new TypeToken<List<StepVariable>>(){}.getType()));
         return json;
     }
 }

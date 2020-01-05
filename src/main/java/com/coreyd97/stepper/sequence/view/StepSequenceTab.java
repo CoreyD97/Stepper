@@ -5,24 +5,23 @@ import com.coreyd97.stepper.step.view.StepPanel;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.Vector;
 
 public class StepSequenceTab extends JPanel {
     private final StepSequence stepSequence;
 
-    private StepContainer stepsContainer;
+    private SequenceContainer stepsContainer;
     private ControlPanel controlPanel;
 
     public StepSequenceTab(StepSequence stepSequence){
         super(new BorderLayout());
         this.stepSequence = stepSequence;
-        this.stepsContainer = new StepContainer(this.stepSequence);
+        this.stepsContainer = new SequenceContainer(this.stepSequence);
         this.controlPanel = new ControlPanel(this.stepSequence);
         add(this.stepsContainer, BorderLayout.CENTER);
         add(this.controlPanel, BorderLayout.SOUTH);
     }
 
-    public StepContainer getStepsContainer() {
+    public SequenceContainer getStepsContainer() {
         return stepsContainer;
     }
 

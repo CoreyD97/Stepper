@@ -92,7 +92,7 @@ public class MessageProcessor implements IHttpListener {
             Matcher m = StepVariable.createIdentifierPattern(replacement).matcher(requestString);
             hasReplaced |= m.find();
 
-            String replacementValue = replacement.getLatestValue() == null ? "" : replacement.getLatestValue();
+            String replacementValue = replacement.getValue() == null ? "" : replacement.getValue();
             requestString = m.replaceAll(replacementValue);
         }
 
@@ -127,7 +127,7 @@ public class MessageProcessor implements IHttpListener {
                 Matcher m = StepVariable.createIdentifierPatternWithSequence(sequence, replacement).matcher(requestString);
                 hasReplaced |= m.find();
 
-                String replacementValue = replacement.getLatestValue() == null ? "" : replacement.getLatestValue();
+                String replacementValue = replacement.getValue() == null ? "" : replacement.getValue();
                 requestString = m.replaceAll(replacementValue);
             }
         }

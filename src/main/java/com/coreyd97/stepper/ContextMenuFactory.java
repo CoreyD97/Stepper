@@ -49,7 +49,7 @@ public class ContextMenuFactory implements IContextMenuFactory {
         newSequence.addActionListener(actionEvent -> {
             String name = JOptionPane.showInputDialog(Stepper.getUI().getUiComponent(), "Enter a name to identify the sequence: ", "", JOptionPane.PLAIN_MESSAGE);
             if(name != null) {
-                StepSequence stepSequence = new StepSequence(false, name);
+                StepSequence stepSequence = new StepSequence(name);
                 for (IHttpRequestResponse message : messages) {
                     stepSequence.addStep(message);
                 }

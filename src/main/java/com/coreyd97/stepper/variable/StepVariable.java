@@ -1,34 +1,31 @@
 package com.coreyd97.stepper.variable;
 
 import com.coreyd97.stepper.sequence.StepSequence;
-import com.coreyd97.stepper.variable.listener.IStepVariableListener;
+import com.coreyd97.stepper.step.Step;
+import com.coreyd97.stepper.step.StepExecutionInfo;
 
-import java.util.ArrayList;
+import javax.swing.*;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.TableCellRenderer;
+import java.awt.*;
 import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
 
-public class StepVariable {
+public abstract class StepVariable implements TableCellRenderer {
 
-    public enum ChangeType {IDENTIFIER, REGEX, VALUE}
+    private static String variablePrepend = "$VAR:";
+    private static String variableAppend = "$";
 
-    String identifier = null;
-    Pattern regex = null;
-    String regexString = null;
-    String latestValue;
-    static String variablePrepend = "$VAR:";
-    static String variableAppend = "$";
+    protected transient VariableManager variableManager;
+    protected String identifier;
+    protected String value;
 
-    private ArrayList<IStepVariableListener> listeners;
+    private StepVariable(){
 
-    public StepVariable(){
-        this.listeners = new ArrayList<>();
     }
 
-    public StepVariable(String identifier, Pattern regex){
-        this();
+    StepVariable(String identifier){
         this.identifier = identifier;
-        this.regex = regex;
-        this.latestValue = "";
+        this.value = "";
     }
 
     public String getIdentifier() {
@@ -37,72 +34,34 @@ public class StepVariable {
 
     public void setIdentifier(String identifier) {
         this.identifier = identifier;
-        for (IStepVariableListener listener : this.listeners) {
-            try {
-                listener.onVariableChange(this, ChangeType.IDENTIFIER);
-            }catch (Exception e){
-                e.printStackTrace();
-            }
-        }
     }
 
-    public Pattern getRegex() {
-        return regex;
+    public abstract void setCondition(String condition);
+
+    public abstract String getConditionText();
+
+    public abstract void updateVariableBeforeExecution();
+
+    public abstract void updateValueFromStep(Step step);
+
+    public abstract void updateVariableAfterExecution(StepExecutionInfo executionInfo);
+
+    public abstract boolean isValid();
+
+    public void setValue(String value) {
+        this.value = value;
     }
 
-    public void setRegex(Pattern regex) {
-        this.regex = regex;
-        for (IStepVariableListener listener : listeners) {
-            try{
-                listener.onVariableChange(this, ChangeType.REGEX);
-            }catch (Exception e){
-                e.printStackTrace();
-            }
-        }
+    protected void notifyChanges(){
+        if(this.variableManager != null) variableManager.onVariableChange(this);
     }
 
-    public String getRegexString() {
-        return regexString;
+    public void setVariableManager(VariableManager variableManager){
+        this.variableManager = variableManager;
     }
 
-    public void setRegexString(String regexString) {
-        try {
-            setRegex(Pattern.compile(regexString, Pattern.DOTALL));
-        }catch (PatternSyntaxException e){
-            setRegex(null);
-        }
-        this.regexString = regexString;
-    }
-
-    public void setLatestValue(String latestValue) {
-        this.latestValue = latestValue;
-        for (IStepVariableListener listener : this.listeners) {
-            try{
-                listener.onVariableChange(this, ChangeType.VALUE);
-            }catch (Exception e){
-                e.printStackTrace();
-            }
-        }
-    }
-
-    public String getLatestValue() {
-        return this.latestValue;
-    }
-
-    public boolean isValidRegex(){
-        return this.regex != null;
-    }
-
-    public void addVariableListener(IStepVariableListener listener){
-        this.listeners.add(listener);
-    }
-
-    public void removeVariableListener(IStepVariableListener listener){
-        this.listeners.remove(listener);
-    }
-
-    public void clearVariableListeners(){
-        this.listeners.clear();
+    public String getValue() {
+        return this.value;
     }
 
     public static Pattern createIdentifierPatternWithSequence(String sequence, String identifier){
@@ -132,4 +91,16 @@ public class StepVariable {
     public static String createVariableString(String identifier){
         return variablePrepend + identifier + variableAppend;
     }
+
+    @Override
+    public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+        DefaultTableCellRenderer defaultRenderer = new DefaultTableCellRenderer();
+        return defaultRenderer.getTableCellRendererComponent(table, this.getConditionText(), isSelected, hasFocus, row, column);
+    }
+
+//    @Override
+//    public Component getTableCellEditorComponent(JTable jTable, Object value, boolean isSelected, int row, int column) {
+//        DefaultCellEditor defaultCellEditor = new DefaultCellEditor(new JTextField());
+//        return defaultCellEditor.getTableCellEditorComponent(jTable, this.getConditionText(), isSelected, row, column);
+//    }
 }

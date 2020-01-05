@@ -2,8 +2,8 @@ package com.coreyd97.stepper.variable.listener;
 
 import com.coreyd97.stepper.variable.StepVariable;
 
-public interface IStepVariableListener {
+public interface StepVariableListener {
     void onVariableAdded(StepVariable variable);
     void onVariableRemoved(StepVariable variable);
-    void onVariableChange(StepVariable variable, StepVariable.ChangeType origin);
+    void onVariableChange(StepVariable variable);
 }

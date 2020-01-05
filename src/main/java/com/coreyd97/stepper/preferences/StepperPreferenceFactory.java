@@ -1,18 +1,22 @@
-package com.coreyd97.stepper.preferences.view;
+package com.coreyd97.stepper.preferences;
 
 import burp.IBurpExtenderCallbacks;
 import com.coreyd97.BurpExtenderUtilities.IGsonProvider;
+import com.coreyd97.BurpExtenderUtilities.ILogProvider;
 import com.coreyd97.BurpExtenderUtilities.PreferenceFactory;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.coreyd97.stepper.Globals;
 import com.coreyd97.stepper.sequence.StepSequence;
-import com.coreyd97.stepper.sequence.globals.SequenceGlobals;
-import com.coreyd97.stepper.sequence.globals.SequenceGlobalsSerializer;
 import com.coreyd97.stepper.sequence.serializer.StepSequenceSerializer;
 import com.coreyd97.stepper.step.Step;
 import com.coreyd97.stepper.step.serializer.StepSerializer;
+import com.coreyd97.stepper.variable.PromptVariable;
+import com.coreyd97.stepper.variable.RegexVariable;
 import com.coreyd97.stepper.variable.StepVariable;
-import com.coreyd97.stepper.variable.serializer.StepVariableSerializer;
+import com.coreyd97.stepper.variable.serializer.PromptVariableSerializer;
+import com.coreyd97.stepper.variable.serializer.RegexVariableSerializer;
+import com.coreyd97.stepper.variable.serializer.VariableSerializer;
+import com.google.gson.InstanceCreator;
 import com.google.gson.reflect.TypeToken;
 
 import java.util.ArrayList;
@@ -20,7 +24,17 @@ import java.util.ArrayList;
 public class StepperPreferenceFactory extends PreferenceFactory {
 
     public StepperPreferenceFactory(String extensionIdentifier, IGsonProvider gsonProvider, IBurpExtenderCallbacks callbacks) {
-        super(extensionIdentifier, gsonProvider, callbacks);
+        super(extensionIdentifier, gsonProvider, new ILogProvider() {
+            @Override
+            public void logOutput(String message) {
+                callbacks.printOutput(message);
+            }
+
+            @Override
+            public void logError(String errorMessage) {
+                callbacks.printError(errorMessage);
+            }
+        }, callbacks);
     }
 
     @Override
@@ -31,9 +45,10 @@ public class StepperPreferenceFactory extends PreferenceFactory {
     @Override
     protected void registerTypeAdapters() {
         gsonProvider.registerTypeAdapter(new TypeToken<StepSequence>(){}.getType(), new StepSequenceSerializer());
-        gsonProvider.registerTypeAdapter(new TypeToken<SequenceGlobals>(){}.getType(), new SequenceGlobalsSerializer());
         gsonProvider.registerTypeAdapter(new TypeToken<Step>(){}.getType(), new StepSerializer());
-        gsonProvider.registerTypeAdapter(new TypeToken<StepVariable>(){}.getType(), new StepVariableSerializer());
+        gsonProvider.registerTypeAdapter(new TypeToken<StepVariable>(){}.getType(), new VariableSerializer());
+        gsonProvider.registerTypeAdapter(new TypeToken<PromptVariable>(){}.getType(), new PromptVariableSerializer());
+        gsonProvider.registerTypeAdapter(new TypeToken<RegexVariable>(){}.getType(), new RegexVariableSerializer());
     }
 
     @Override

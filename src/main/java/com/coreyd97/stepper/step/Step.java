@@ -1,28 +1,29 @@
 package com.coreyd97.stepper.step;
 
-import burp.*;
-import com.coreyd97.stepper.*;
+import burp.IHttpRequestResponse;
+import burp.IHttpService;
+import burp.IMessageEditor;
+import burp.IMessageEditorController;
+import com.coreyd97.stepper.MessageProcessor;
+import com.coreyd97.stepper.Stepper;
 import com.coreyd97.stepper.exception.SequenceCancelledException;
 import com.coreyd97.stepper.exception.SequenceExecutionException;
 import com.coreyd97.stepper.sequence.StepSequence;
-import com.coreyd97.stepper.step.listener.StepListener;
 import com.coreyd97.stepper.step.listener.StepExecutionListener;
 import com.coreyd97.stepper.variable.StepVariable;
-import com.coreyd97.stepper.variable.listener.IStepVariableListener;
+import com.coreyd97.stepper.variable.VariableManager;
 
 import javax.swing.*;
 import java.util.*;
-import java.util.regex.Matcher;
 
-public class Step implements IMessageEditorController, IStepVariableListener {
+public class Step implements IMessageEditorController {
 
-    private final Vector<StepVariable> variables;
-    private final ArrayList<IStepVariableListener> variableListeners;
     private final List<StepExecutionListener> executionListeners;
+    private final StepVariableManager variableManager;
     private IMessageEditor requestEditor;
     private IMessageEditor responseEditor;
     private StepSequence sequence;
-    private IHttpRequestResponse requestResponse;
+    private StepExecutionInfo lastExecutionInfo;
     private IHttpService httpService;
     private String hostname;
     private Integer port;
@@ -35,8 +36,7 @@ public class Step implements IMessageEditorController, IStepVariableListener {
     private byte[] responseBody;
 
     public Step(){
-        this.variables = new Vector<>();
-        this.variableListeners = new ArrayList<>();
+        this.variableManager = new StepVariableManager(this);
         this.executionListeners = new ArrayList<>();
         this.requestBody = new byte[0];
         this.responseBody = new byte[0];
@@ -68,7 +68,6 @@ public class Step implements IMessageEditorController, IStepVariableListener {
         this.requestBody = requestBody;
         if(this.requestEditor != null)
             this.requestEditor.setMessage(requestBody, true);
-        stepUpdated();
     }
 
     public void setResponseBody(byte[] responseBody){
@@ -77,46 +76,8 @@ public class Step implements IMessageEditorController, IStepVariableListener {
 
     }
 
-    public Vector<StepVariable> getVariables() {
-        return variables;
-    }
-
-    public void addVariable(){
-        StepVariable var = new StepVariable();
-        var.setIdentifier(UUID.randomUUID().toString());
-        addVariable(var);
-    }
-
-    public void addVariable(StepVariable var){
-        this.variables.add(var);
-        var.addVariableListener(this);
-        for (IStepVariableListener variableListener : this.variableListeners) {
-            var.addVariableListener(variableListener);
-            variableListener.onVariableAdded(var);
-        }
-    }
-
-    public void deleteVariable(int index){
-        if(index == -1) return;
-        StepVariable variable = this.variables.get(index);
-        deleteVariable(variable);
-    }
-
-    public void deleteVariable(StepVariable variable){
-        if(variable == null) return;
-        this.variables.remove(variable);
-        for (IStepVariableListener variableListener : this.variableListeners) {
-            variableListener.onVariableRemoved(variable);
-            variable.removeVariableListener(variableListener);
-        }
-    }
-
-    private void stepUpdated(){
-        if(this.sequence != null){
-            for (StepListener stepListener : this.sequence.getStepListeners()) {
-                try{ stepListener.onStepUpdated(this); }catch (Exception ignored){}
-            }
-        }
+    public StepVariableManager getVariableManager() {
+        return variableManager;
     }
 
     public StepSequence getSequence() {
@@ -150,10 +111,12 @@ public class Step implements IMessageEditorController, IStepVariableListener {
     public StepExecutionInfo executeStep(List<StepVariable> replacements) throws SequenceExecutionException {
         byte[] requestWithoutReplacements = getRequest();
         byte[] builtRequest;
+
+        this.variableManager.updateVariablesBeforeExecution();
+
         for (StepExecutionListener executionListener : this.executionListeners) {
             executionListener.beforeStepExecution();
         }
-
 
         if(MessageProcessor.hasStepVariable(requestWithoutReplacements)) {
             if(MessageProcessor.isUnprocessable(requestWithoutReplacements)){
@@ -180,86 +143,31 @@ public class Step implements IMessageEditorController, IStepVariableListener {
 
         long start = new Date().getTime();
         //Update with response
-        this.requestResponse = Stepper.callbacks.makeHttpRequest(this.getHttpService(), builtRequest);
+        IHttpRequestResponse requestResponse = Stepper.callbacks.makeHttpRequest(this.getHttpService(), builtRequest);
         long end = new Date().getTime();
-        if(this.requestResponse.getResponse() == null)
+        if(requestResponse.getResponse() == null)
             throw new SequenceExecutionException("The request to the server timed out.");
 
-        setResponseBody(this.requestResponse.getResponse());
-        String responseString = new String(this.requestResponse.getResponse());
+        setResponseBody(requestResponse.getResponse());
+
+        this.lastExecutionInfo = new StepExecutionInfo(this, requestResponse, end-start);
 
         //Pull variables from response
-        for (StepVariable variable : this.variables) {
-            updateVariable(variable, responseString);
-        }
-
-        StepExecutionInfo executionInfo = new StepExecutionInfo(this, this.requestResponse, end-start);
+        this.variableManager.updateVariablesAfterExecution(lastExecutionInfo);
 
         for (StepExecutionListener executionListener : executionListeners) {
-            executionListener.stepExecuted(executionInfo);
+            executionListener.stepExecuted(lastExecutionInfo);
         }
 
-        return executionInfo;
+        return lastExecutionInfo;
     }
 
-    private void updateHttpService(){
-        this.httpService = Stepper.callbacks.getHelpers().buildHttpService(
-                this.hostname, this.port, this.isSSL);
-        stepUpdated();
-    }
-
-    private void updateVariable(StepVariable variable, String response){
-        if(variable.getRegex() == null) return;
-        Matcher m = variable.getRegex().matcher(response);
-        if(m.find()){
-            if(m.groupCount() == 0)
-                variable.setLatestValue(m.group(0));
-            else
-                variable.setLatestValue(m.group(1));
-        }else{
-            variable.setLatestValue("");
-        }
-    }
-
-    public void dispose(){
-        for (StepVariable variable : this.variables) {
-            variable.clearVariableListeners();
-        }
-        this.variableListeners.clear();
-    }
-
-    @Override
-    public void onVariableChange(StepVariable variable, StepVariable.ChangeType origin) {
-        if(origin != StepVariable.ChangeType.REGEX) return;
-        if (this.requestResponse != null && this.requestResponse.getResponse() != null)
-            updateVariable(variable, new String(this.requestResponse.getResponse()));
-        else
-            updateVariable(variable, new String(""));
-    }
-
-    @Override
-    public void onVariableAdded(StepVariable variable) {
-        for (IStepVariableListener variableListener : this.variableListeners) {
-            variable.addVariableListener(variableListener);
-        }
-    }
-
-    @Override
-    public void onVariableRemoved(StepVariable variable) {
-        variable.clearVariableListeners();
-    }
-
-    public void addVariableListener(IStepVariableListener listener){
-        this.variableListeners.add(listener);
-        for (StepVariable variable : this.getVariables()) {
-            variable.addVariableListener(listener);
-        }
-    }
-
-    public void removeVariableListener(IStepVariableListener listener){
-        this.variableListeners.remove(listener);
-        for (StepVariable variable : this.getVariables()) {
-            variable.removeVariableListener(listener);
+    private void tryUpdateHttpService(){
+        try {
+            this.httpService = Stepper.callbacks.getHelpers().buildHttpService(
+                    this.hostname, this.port, this.isSSL);
+        }catch (IllegalArgumentException e){
+            //
         }
     }
 
@@ -277,7 +185,7 @@ public class Step implements IMessageEditorController, IStepVariableListener {
 
     public void setHostname(String hostname) {
         this.hostname = hostname;
-        updateHttpService();
+        tryUpdateHttpService();
     }
 
     public Integer getPort() {
@@ -286,7 +194,7 @@ public class Step implements IMessageEditorController, IStepVariableListener {
 
     public void setPort(Integer port) {
         this.port = port;
-        updateHttpService();
+        tryUpdateHttpService();
     }
 
     public boolean isSSL() {
@@ -294,7 +202,7 @@ public class Step implements IMessageEditorController, IStepVariableListener {
     }
 
     public void setSSL(boolean SSL) {
-        updateHttpService();
+        tryUpdateHttpService();
         isSSL = SSL;
     }
 
@@ -319,7 +227,7 @@ public class Step implements IMessageEditorController, IStepVariableListener {
         this.hostname = httpService.getHost();
         this.port = httpService.getPort();
         this.isSSL = httpService.getProtocol().equalsIgnoreCase("https");
-        updateHttpService();
+        tryUpdateHttpService();
     }
 
     public void setTitle(String title) {
@@ -328,11 +236,6 @@ public class Step implements IMessageEditorController, IStepVariableListener {
 
     public String getTitle() {
         return title;
-    }
-
-    public List<StepVariable> getRollingVariables() {
-        if(this.sequence == null) return new ArrayList<>();
-        return this.sequence.getRollingVariablesUpToStep(this);
     }
 
     public void registerRequestEditor(IMessageEditor requestEditor) {
@@ -345,4 +248,7 @@ public class Step implements IMessageEditorController, IStepVariableListener {
         this.responseEditor.setMessage(responseBody, false);
     }
 
+    public StepExecutionInfo getLastExecutionResult() {
+        return this.lastExecutionInfo;
+    }
 }

@@ -4,25 +4,21 @@ import com.coreyd97.BurpExtenderUtilities.CustomTabComponent;
 import com.coreyd97.stepper.sequence.StepSequence;
 import com.coreyd97.stepper.step.Step;
 import com.coreyd97.stepper.step.listener.StepAdapter;
-import com.coreyd97.stepper.step.listener.StepListener;
 import com.coreyd97.stepper.step.view.StepPanel;
-import com.coreyd97.stepper.variable.StepVariable;
-import com.coreyd97.stepper.variable.listener.IStepVariableListener;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.HashMap;
-import java.util.Vector;
 import java.util.function.Consumer;
 
-public class StepContainer extends JPanel implements IStepVariableListener {
+public class SequenceContainer extends JPanel {
 
     private final StepSequence stepSequence;
     private HashMap<Step, StepPanel> stepToPanelMap;
     private JTabbedPane tabbedContainer;
 
-    public StepContainer(StepSequence stepSequence){
+    public SequenceContainer(StepSequence stepSequence){
         super(new BorderLayout());
         this.stepSequence = stepSequence;
         this.stepToPanelMap = new HashMap<>();
@@ -35,7 +31,6 @@ public class StepContainer extends JPanel implements IStepVariableListener {
         }
 
         //Listen for new steps and changes to the sequence globals
-        this.stepSequence.getSequenceGlobals().addVariableListener(this);
         this.stepSequence.addStepListener(new StepAdapter(){
             @Override
             public void onStepAdded(Step step) {
@@ -81,7 +76,7 @@ public class StepContainer extends JPanel implements IStepVariableListener {
         };
 
         CustomTabComponent tabComponent = new CustomTabComponent(tabNumber,
-                panel.getStep().getTitle(), true,
+                step.getTitle(), true,
                 true, onTitleChanged,true, onRemoveClicked);
         tabComponent.addMouseListener(new MouseAdapter() {
             @Override
@@ -137,17 +132,15 @@ public class StepContainer extends JPanel implements IStepVariableListener {
     }
 
     private void addPanelForStep(Step step){
-        StepPanel panel = new StepPanel(stepSequence, step);
+        StepPanel panel = new StepPanel(this, step);
         this.stepToPanelMap.put(step, panel);
         addTabForStep(step, panel);
-        step.addVariableListener(this);
 
         this.revalidate();
         this.repaint();
     }
 
     private void removePanelForStep(Step step){
-        step.removeVariableListener(this);
         StepPanel panel = this.stepToPanelMap.remove(step);
         updateSubsequentPanels(panel); //Update the panels before this one is removed...
         removeTabbedEntry(panel);
@@ -163,26 +156,7 @@ public class StepContainer extends JPanel implements IStepVariableListener {
         this.tabbedContainer.setSelectedComponent(stepPanel);
     }
 
-    @Override
-    public void onVariableAdded(StepVariable variable) {
-        updateSubsequentPanels(this.stepToPanelMap.get(stepSequence.getOriginatingStep(variable)));
-    }
-
-    @Override
-    public void onVariableRemoved(StepVariable variable) {
-        updateSubsequentPanels(this.stepToPanelMap.get(stepSequence.getOriginatingStep(variable)));
-    }
-
-    @Override
-    public void onVariableChange(StepVariable variable, StepVariable.ChangeType origin) {
-        Step originatingStep = stepSequence.getOriginatingStep(variable);
-        if(originatingStep != null)
-            updateSubsequentPanels(this.stepToPanelMap.get(stepSequence.getOriginatingStep(variable)));
-        else
-            updateAllPanels();
-    }
-
-    private void updateSubsequentPanels(StepPanel panel){
+    public void updateSubsequentPanels(StepPanel panel){
         int tabIndex = this.tabbedContainer.indexOfComponent(panel) + 1;
 
         //Loop over panels, not including the Add Step panel

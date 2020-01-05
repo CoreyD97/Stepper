@@ -35,7 +35,7 @@ public class StepperUI implements ITab {
             @Override
             public void mouseClicked(MouseEvent e) {
                 if(SwingUtilities.isLeftMouseButton(e)) {
-                    sequenceManager.addStepSequence(new StepSequence(false));
+                    sequenceManager.addStepSequence(new StepSequence());
                 }
             }
         });
@@ -49,6 +49,10 @@ public class StepperUI implements ITab {
         //Add tabs for existing sequences
         for (StepSequence sequence : this.sequenceManager.getSequences()) {
             addTabForSequence(sequence);
+        }
+
+        if(this.sequenceManager.getSequences().size() == 0){
+            this.tabbedPane.setSelectedIndex(2); //View about page if no sequences
         }
 
         //Listen for tab additions and removals

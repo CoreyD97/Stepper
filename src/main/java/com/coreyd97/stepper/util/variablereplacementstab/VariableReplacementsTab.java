@@ -5,9 +5,9 @@ import burp.IMessageEditorTab;
 import com.coreyd97.stepper.sequencemanager.SequenceManager;
 import com.coreyd97.stepper.step.Step;
 import com.coreyd97.stepper.variable.StepVariable;
-import com.coreyd97.stepper.*;
 import com.coreyd97.stepper.sequence.StepSequence;
 import com.coreyd97.stepper.util.view.WrappedTextPane;
+import com.coreyd97.stepper.variable.listener.StepVariableListener;
 
 import javax.swing.*;
 import javax.swing.text.*;
@@ -30,13 +30,15 @@ public class VariableReplacementsTab implements IMessageEditorTab {//, IStepList
     private final StyledDocument document;
     private final boolean isEditable;
 
-    private Step actualController;
+    private Step step;
     private byte[] rawRequest;
+    private TabVariableListener tabVariableListener;
 
     public VariableReplacementsTab(SequenceManager sequenceManager, IMessageEditorController controller, boolean isEditable){
         this.sequenceManager = sequenceManager;
         this.controller = controller;
         this.isEditable = isEditable;
+        this.tabVariableListener = new TabVariableListener();
 
         //Setup text area
         this.textArea = new WrappedTextPane();
@@ -69,8 +71,8 @@ public class VariableReplacementsTab implements IMessageEditorTab {//, IStepList
                 "Simply click to another tab and back to display the correct content.");
     }
 
-    void setActualController(Step controller){
-        this.actualController = controller;
+    void setStep(Step controller){
+        this.step = controller;
     }
 
     @Override
@@ -109,19 +111,16 @@ public class VariableReplacementsTab implements IMessageEditorTab {//, IStepList
         return this.textArea.getSelectedText().getBytes();
     }
 
-    public void updateMessageWithReplacements(){
-        this.updateMessageWithReplacements(this.rawRequest);
-    }
-
     private void updateMessageWithReplacements(byte[] content){
         if(content == null){
             this.textArea.setText("");
             return;
         }
         HashMap<StepSequence, List<StepVariable>> variables;
-        if(this.actualController != null){
+        if(this.step != null){
             variables = new HashMap<>();
-            variables.put(this.actualController.getSequence(), this.actualController.getRollingVariables());
+            variables.put(this.step.getSequence(),
+                    this.step.getSequence().getRollingVariablesUpToStep(this.step));
         }else{
             variables = this.sequenceManager.getRollingVariablesFromAllSequences();
         }
@@ -149,11 +148,11 @@ public class VariableReplacementsTab implements IMessageEditorTab {//, IStepList
 
             for (StepVariable stepVariable : variables) {
                 output = new StringBuffer();
-                Pattern pattern = this.actualController != null ? //Are we dealing with a step message editor?
+                Pattern pattern = this.step != null ? //Are we dealing with a step message editor?
                         StepVariable.createIdentifierPattern(stepVariable)
                         : StepVariable.createIdentifierPatternWithSequence(sequence, stepVariable);
 
-                String replacement = stepVariable.getLatestValue() != null ? stepVariable.getLatestValue() : "";
+                String replacement = stepVariable.getValue() != null ? stepVariable.getValue() : "";
                 Matcher m = pattern.matcher(contentToSearch);
                 int replacementCount = 0;
                 while(m.find()){
@@ -199,5 +198,22 @@ public class VariableReplacementsTab implements IMessageEditorTab {//, IStepList
             currentOffset = highlightRange[0]+highlightRange[1];
         }
         document.insertString(currentOffset, output.substring(currentOffset, output.length()), defaultStyle);
+    }
+
+    private class TabVariableListener implements StepVariableListener {
+        @Override
+        public void onVariableAdded(StepVariable variable) {
+            updateMessageWithReplacements(rawRequest);
+        }
+
+        @Override
+        public void onVariableRemoved(StepVariable variable) {
+            updateMessageWithReplacements(rawRequest);
+        }
+
+        @Override
+        public void onVariableChange(StepVariable variable) {
+            updateMessageWithReplacements(rawRequest);
+        }
     }
 }

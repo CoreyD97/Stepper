@@ -2,7 +2,7 @@ package com.coreyd97.stepper.step.listener;
 
 import com.coreyd97.stepper.step.Step;
 
-public class StepAdapter implements StepListener {
+public abstract class StepAdapter implements StepListener {
     @Override
     public void onStepAdded(Step step) {
 
