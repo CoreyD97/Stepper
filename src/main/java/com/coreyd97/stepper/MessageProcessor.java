@@ -4,14 +4,10 @@ import burp.*;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.coreyd97.stepper.sequence.StepSequence;
 import com.coreyd97.stepper.sequencemanager.SequenceManager;
-import com.coreyd97.stepper.variable.PreExecutionStepVariable;
 import com.coreyd97.stepper.variable.StepVariable;
 
 import javax.swing.*;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -19,6 +15,7 @@ public class MessageProcessor implements IHttpListener {
 
     private final SequenceManager sequenceManager;
     private final Preferences preferences;
+    private static final String EXECUTE_BEFORE_REGEX = "X-Stepper-Execute-Before:(.*)";
 
     public MessageProcessor(SequenceManager sequenceManager, Preferences preferences){
         this.sequenceManager = sequenceManager;
@@ -39,6 +36,23 @@ public class MessageProcessor implements IHttpListener {
     @Override
     public void processHttpMessage(int toolFlag, boolean messageIsRequest, IHttpRequestResponse messageInfo) {
         if(isValidTool(toolFlag) && messageIsRequest){
+
+            //Check if headers ask us to execute a request before the request.
+            IRequestInfo requestInfo = Stepper.callbacks.getHelpers().analyzeRequest(messageInfo);
+            for (String header : requestInfo.getHeaders()) {
+                Pattern beforeHeaderPattern = Pattern.compile(EXECUTE_BEFORE_REGEX);
+                Matcher m = beforeHeaderPattern.matcher(header);
+                if(m.matches()){
+                    Optional<StepSequence> beforeSequence = sequenceManager.getSequences().stream()
+                            .filter(sequence -> sequence.getTitle().equalsIgnoreCase(m.group(1).trim()))
+                            .findFirst();
+                    if(beforeSequence.isPresent()) {
+                        beforeSequence.get().executeBlocking();
+                    }
+                }
+            }
+
+
             HashMap<StepSequence, List<StepVariable>> allVariables = sequenceManager.getRollingVariablesFromAllSequences();
 
             if(allVariables.size() > 0 && hasStepVariable(messageInfo.getRequest())) {
