@@ -1,44 +1,36 @@
 package com.coreyd97.stepper.step.view;
 
-import com.coreyd97.stepper.util.dialog.VariableCreationDialog;
-import com.coreyd97.stepper.variable.VariableManager;
 import com.coreyd97.stepper.variable.StepVariable;
+import com.coreyd97.stepper.variable.VariableManager;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 
-public class VariableControlPanel extends JPanel implements ListSelectionListener {
+public abstract class VariableControlPanel extends JPanel implements ListSelectionListener {
 
-    private final VariableManager variableManager;
-    private final VariableTable variableTable;
     private JButton addVariableButton;
     private JButton deleteSelectedVariableButton;
 
-    public VariableControlPanel(VariableManager variableManager, VariableTable variableTable){
+    public VariableControlPanel(){
         super(new GridLayout(1, 0));
-        this.variableManager = variableManager;
-        this.variableTable = variableTable;
         this.addVariableButton = new JButton("Add Variable");
         this.addVariableButton.addActionListener(actionEvent -> {
-            VariableCreationDialog dialog = new VariableCreationDialog((Frame) SwingUtilities.getWindowAncestor(this),
-                    "New Variable");
-            StepVariable variable = dialog.run();
-            if(variable != null) {
-                this.variableManager.addVariable(variable);
-            }
+            handleAddVariableEvent();
         });
         this.deleteSelectedVariableButton = new JButton("Delete Selected Variable");
         this.deleteSelectedVariableButton.addActionListener(actionEvent -> {
-            StepVariable variable = this.variableManager.getVariables().get(this.variableTable.getSelectedRow());
-            this.variableManager.removeVariable(variable);
+            handleDeleteVariableEvent();
         });
 
         this.add(this.addVariableButton);
         this.add(this.deleteSelectedVariableButton);
     }
 
+    abstract void handleAddVariableEvent();
+
+    abstract void handleDeleteVariableEvent();
 
     @Override
     public void valueChanged(ListSelectionEvent listSelectionEvent) {

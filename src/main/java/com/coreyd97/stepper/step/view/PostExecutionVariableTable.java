@@ -1,26 +1,24 @@
 package com.coreyd97.stepper.step.view;
 
 import com.coreyd97.stepper.step.Step;
+import com.coreyd97.stepper.variable.PostExecutionStepVariable;
+import com.coreyd97.stepper.variable.PreExecutionStepVariable;
 import com.coreyd97.stepper.variable.VariableManager;
 import com.coreyd97.stepper.variable.StepVariable;
 import com.coreyd97.stepper.variable.listener.StepVariableListener;
-import com.coreyd97.stepper.util.view.StepVariableEditor;
-import com.coreyd97.stepper.util.view.StepVariableRenderer;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
 import java.awt.*;
 
-public class VariableTable extends JTable {
+public class PostExecutionVariableTable extends JTable {
 
-    private Step step;
 
-    public VariableTable(Step step){
+    public PostExecutionVariableTable(VariableManager variableManager){
         super();
-        this.step = step;
-        this.setModel(new VariableTableModel(this.step.getVariableManager()));
-        this.getColumnModel().getColumn(1).setCellRenderer(new StepVariableRenderer());
-        this.setDefaultEditor(StepVariable.class, new StepVariableEditor());
+        this.setModel(new PostExecutionVariableTableModel(variableManager));
+//        this.getColumnModel().getColumn(1).setCellRenderer(new StepVariableRenderer());
+//        this.setDefaultEditor(StepVariable.class, new StepVariableEditor());
         this.createDefaultTableHeader();
 
         FontMetrics metrics = this.getFontMetrics(this.getFont());
@@ -30,58 +28,54 @@ public class VariableTable extends JTable {
         this.putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
     }
 
-    private class VariableTableModel extends AbstractTableModel implements StepVariableListener {
+    private class PostExecutionVariableTableModel extends AbstractTableModel implements StepVariableListener {
 
         private final VariableManager variableManager;
 
-        private VariableTableModel(VariableManager variableManager){
+        private PostExecutionVariableTableModel(VariableManager variableManager){
             this.variableManager = variableManager;
             this.variableManager.addVariableListener(this);
         }
 
         @Override
         public Class<?> getColumnClass(int i) {
-            switch (i){
-                case 0: return String.class;
-                case 1: return StepVariable.class;
-                case 2: return String.class;
-                default: return String.class;
-            }
+            return String.class;
         }
 
         @Override
         public String getColumnName(int i) {
             switch(i){
-                case 0: return "Identifier";
-                case 1: return "Condition";
-                case 2: return "Value";
+                case 0: return "Type";
+                case 1: return "Identifier";
+                case 2: return "Condition";
+                case 3: return "Value";
                 default: return "N/A";
             }
         }
 
         @Override
         public boolean isCellEditable(int row, int column) {
-            if(column == 2) return false;
-            return true;
+            return column == 1 || column == 2;
         }
 
         @Override
         public int getRowCount() {
-            return variableManager.getVariables().size();
+            return this.variableManager.getPostExecutionVariables().size();
         }
 
         @Override
         public int getColumnCount() {
-            return 3;
+            return 4;
         }
 
         @Override
         public Object getValueAt(int row, int col) {
-            StepVariable variable = variableManager.getVariables().get(row);
+            PostExecutionStepVariable variable = this.variableManager.getPostExecutionVariables().get(row);
             switch (col){
-                case 0: return variable.getIdentifier();
-                case 1: return variable;
-                case 2: return variable.getValue();
+                case 0: return variable.getType();
+                case 1: return variable.getIdentifier();
+                case 2: return variable.getConditionText();
+                case 3: return variable.getValue();
             }
 
             return "";
@@ -89,10 +83,10 @@ public class VariableTable extends JTable {
 
         @Override
         public void setValueAt(Object value, int row, int col) {
-            StepVariable var = this.variableManager.getVariables().get(row);
+            PostExecutionStepVariable var = this.variableManager.getPostExecutionVariables().get(row);
             switch (col){
-                case 0: var.setIdentifier((String) value); break;
-                case 1: var.setCondition((String) value); break;
+                case 1: var.setIdentifier((String) value); break;
+                case 2: var.setCondition((String) value); break;
             }
             this.fireTableDataChanged();
         }

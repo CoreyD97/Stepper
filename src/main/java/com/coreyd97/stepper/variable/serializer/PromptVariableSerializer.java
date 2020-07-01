@@ -12,14 +12,18 @@ public class PromptVariableSerializer implements JsonSerializer<PromptVariable>,
         JsonObject jsonObject = json.getAsJsonObject();
         PromptVariable stepVariable = new PromptVariable();
         stepVariable.setIdentifier(jsonObject.get("identifier") != null ? jsonObject.get("identifier").getAsString() : "" );
+        if(jsonObject.has("value")) {
+            stepVariable.setValue(jsonObject.get("value").getAsString());
+        }
         return stepVariable;
     }
 
     @Override
     public JsonElement serialize(PromptVariable src, Type typeOfSrc, JsonSerializationContext context) {
         JsonObject obj = new JsonObject();
-        obj.addProperty("type", "prompt");
+        obj.addProperty("type", src.getType());
         obj.addProperty("identifier", src.getIdentifier());
+        obj.addProperty("value", src.getValue());
         return obj;
     }
 }

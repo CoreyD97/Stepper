@@ -1,6 +1,5 @@
 package com.coreyd97.stepper.variable;
 
-import com.coreyd97.stepper.step.Step;
 import com.coreyd97.stepper.step.StepExecutionInfo;
 import com.coreyd97.stepper.step.StepVariableManager;
 
@@ -12,7 +11,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-public class RegexVariable extends StepVariable {
+public class RegexVariable extends PostExecutionStepVariable {
 
     Pattern regex = null;
     String regexString = null;
@@ -45,7 +44,7 @@ public class RegexVariable extends StepVariable {
             this.regex = null;
         }
         if(this.variableManager != null) {
-            ((StepVariableManager) this.variableManager).refreshVariableFromPreviousExecution(this);
+            ((StepVariableManager) this.variableManager).updateVariableWithPreviousExecutionResult(this);
         }
         notifyChanges();
     }
@@ -56,18 +55,13 @@ public class RegexVariable extends StepVariable {
     }
 
     @Override
+    public String getValuePreview() {
+        return this.value;
+    }
+
+    @Override
     public boolean isValid() {
         return this.regex != null;
-    }
-
-    @Override
-    public void updateVariableBeforeExecution() {
-
-    }
-
-    @Override
-    public void updateValueFromStep(Step step) {
-        //TODO
     }
 
     @Override
@@ -77,24 +71,20 @@ public class RegexVariable extends StepVariable {
 
         String response = new String(executionInfo.getIRequestResponse().getResponse());
         Matcher m = this.regex.matcher(response);
-        if(m.find()) this.value = m.group();
-        else this.value = "";
+        if(m.find()) {
+            if(m.groupCount() > 0) this.value = m.group(1);
+            else this.value = m.group();
+        }else{
+            this.value = "";
+        }
 
         notifyChanges();
     }
 
-    @Override
-    public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-        DefaultTableCellRenderer defaultRenderer = new DefaultTableCellRenderer();
-        Component c = defaultRenderer.getTableCellRendererComponent(table, this.regexString, isSelected, hasFocus, row, column);
-        styleComponentForRegexValidity(c);
-        return c;
-    }
-
 //    @Override
-//    public Component getTableCellEditorComponent(JTable jTable, Object value, boolean isSelected, int row, int column) {
-//        DefaultCellEditor defaultCellEditor = new DefaultCellEditor(new JTextField());
-//        Component c = defaultCellEditor.getTableCellEditorComponent(jTable, this.regex.pattern(), isSelected, row, column);
+//    public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+//        DefaultTableCellRenderer defaultRenderer = new DefaultTableCellRenderer();
+//        Component c = defaultRenderer.getTableCellRendererComponent(table, this.regexString, isSelected, hasFocus, row, column);
 //        styleComponentForRegexValidity(c);
 //        return c;
 //    }
@@ -111,5 +101,10 @@ public class RegexVariable extends StepVariable {
 
     public Pattern getPattern() {
         return this.regex;
+    }
+
+    @Override
+    public String getType() {
+        return "Regex";
     }
 }

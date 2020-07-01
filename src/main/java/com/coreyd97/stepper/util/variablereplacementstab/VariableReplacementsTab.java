@@ -152,9 +152,10 @@ public class VariableReplacementsTab implements IMessageEditorTab {//, IStepList
                         StepVariable.createIdentifierPattern(stepVariable)
                         : StepVariable.createIdentifierPatternWithSequence(sequence, stepVariable);
 
-                String replacement = stepVariable.getValue() != null ? stepVariable.getValue() : "";
+                String replacement = stepVariable.getValuePreview() != null ? stepVariable.getValuePreview() : "";
                 Matcher m = pattern.matcher(contentToSearch);
                 int replacementCount = 0;
+                replacement = replacement.replaceAll("\\$", "\\\\\\$");
                 while(m.find()){
                     m.appendReplacement(output, replacement);
                     //Offset also takes into account previous found instances that had been replaced.

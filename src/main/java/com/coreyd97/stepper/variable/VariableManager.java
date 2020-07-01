@@ -4,6 +4,7 @@ import com.coreyd97.stepper.variable.listener.StepVariableListener;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public abstract class VariableManager {
     protected final List<StepVariable> variables;
@@ -16,6 +17,20 @@ public abstract class VariableManager {
 
     public List<StepVariable> getVariables() {
         return variables;
+    }
+
+    public List<PostExecutionStepVariable> getPostExecutionVariables(){
+        return variables.stream()
+            .filter(var -> var instanceof PostExecutionStepVariable)
+            .map(stepVariable -> (PostExecutionStepVariable) stepVariable)
+            .collect(Collectors.toList());
+    }
+
+    public List<PreExecutionStepVariable> getPreExecutionVariables(){
+        return variables.stream()
+                .filter(var -> var instanceof PreExecutionStepVariable)
+                .map(stepVariable -> (PreExecutionStepVariable) stepVariable)
+                .collect(Collectors.toList());
     }
 
     public void addVariableListener(StepVariableListener listener){

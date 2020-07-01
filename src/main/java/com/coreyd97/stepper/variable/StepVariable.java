@@ -10,7 +10,7 @@ import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.util.regex.Pattern;
 
-public abstract class StepVariable implements TableCellRenderer {
+public abstract class StepVariable {
 
     private static String variablePrepend = "$VAR:";
     private static String variableAppend = "$";
@@ -28,6 +28,8 @@ public abstract class StepVariable implements TableCellRenderer {
         this.value = "";
     }
 
+    public abstract String getType();
+
     public String getIdentifier() {
         return identifier;
     }
@@ -36,21 +38,13 @@ public abstract class StepVariable implements TableCellRenderer {
         this.identifier = identifier;
     }
 
-    public abstract void setCondition(String condition);
-
-    public abstract String getConditionText();
-
-    public abstract void updateVariableBeforeExecution();
-
-    public abstract void updateValueFromStep(Step step);
-
-    public abstract void updateVariableAfterExecution(StepExecutionInfo executionInfo);
-
     public abstract boolean isValid();
 
     public void setValue(String value) {
         this.value = value;
     }
+
+    public abstract String getValuePreview();
 
     protected void notifyChanges(){
         if(this.variableManager != null) variableManager.onVariableChange(this);
@@ -91,16 +85,4 @@ public abstract class StepVariable implements TableCellRenderer {
     public static String createVariableString(String identifier){
         return variablePrepend + identifier + variableAppend;
     }
-
-    @Override
-    public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-        DefaultTableCellRenderer defaultRenderer = new DefaultTableCellRenderer();
-        return defaultRenderer.getTableCellRendererComponent(table, this.getConditionText(), isSelected, hasFocus, row, column);
-    }
-
-//    @Override
-//    public Component getTableCellEditorComponent(JTable jTable, Object value, boolean isSelected, int row, int column) {
-//        DefaultCellEditor defaultCellEditor = new DefaultCellEditor(new JTextField());
-//        return defaultCellEditor.getTableCellEditorComponent(jTable, this.getConditionText(), isSelected, row, column);
-//    }
 }

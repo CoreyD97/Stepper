@@ -12,17 +12,17 @@ import java.util.UUID;
 
 public class VariableCreationDialog extends JDialog {
 
-    private enum VariableType { PROMPT, REGEX }
+    public enum VariableType { PROMPT, REGEX }
     StepVariable variable;
 
-    public VariableCreationDialog(Frame owner, String title){
+    public VariableCreationDialog(Frame owner, String title, VariableType type){
         super(owner, title, true);
 
-        buildDialog();
+        buildDialog(type);
         pack();
     }
 
-    private void buildDialog(){
+    private void buildDialog(VariableType type){
         BorderLayout borderLayout = new BorderLayout();
         borderLayout.setHgap(10);
         borderLayout.setVgap(10);
@@ -35,21 +35,21 @@ public class VariableCreationDialog extends JDialog {
         namePanel.add(variableNameInput, BorderLayout.CENTER);
         wrapper.add(namePanel, BorderLayout.NORTH);
 
-        JLabel typeLabel = new JLabel("Type: ");
-        JComboBox<VariableType> typeCombo = new JComboBox<>(VariableType.values());
-        JPanel typePanel = new JPanel(new BorderLayout());
-        typePanel.add(typeLabel, BorderLayout.WEST);
-        typePanel.add(typeCombo, BorderLayout.CENTER);
-        wrapper.add(typePanel, BorderLayout.CENTER);
+//        JLabel typeLabel = new JLabel("Type: ");
+//        JComboBox<VariableType> typeCombo = new JComboBox<>(VariableType.values());
+//        JPanel typePanel = new JPanel(new BorderLayout());
+//        typePanel.add(typeLabel, BorderLayout.WEST);
+//        typePanel.add(typeCombo, BorderLayout.CENTER);
+//        wrapper.add(typePanel, BorderLayout.CENTER);
 
         JButton okButton = new JButton("OK");
         okButton.addActionListener(actionEvent -> {
-            //todo Build variable from selected type
+            //todo Nicer way of constructing variables with support for different types once implemented.
             String variableName = variableNameInput.getText();
             if(variableName.equalsIgnoreCase("")){
                 variableName = UUID.randomUUID().toString();
             }
-            switch ((VariableType) typeCombo.getSelectedItem()) {
+            switch (type) {
                 case PROMPT:
                     variable = new PromptVariable(variableName);
                     break;

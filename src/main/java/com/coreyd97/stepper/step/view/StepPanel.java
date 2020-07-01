@@ -4,13 +4,10 @@ import burp.IMessageEditor;
 import com.coreyd97.stepper.*;
 import com.coreyd97.stepper.exception.SequenceCancelledException;
 import com.coreyd97.stepper.exception.SequenceExecutionException;
-import com.coreyd97.stepper.sequence.listener.SequenceExecutionAdapter;
-import com.coreyd97.stepper.sequence.StepSequence;
 import com.coreyd97.stepper.sequence.view.SequenceContainer;
 import com.coreyd97.stepper.step.Step;
 import com.coreyd97.stepper.step.StepExecutionInfo;
 import com.coreyd97.stepper.step.listener.StepExecutionAdapter;
-import com.coreyd97.stepper.step.listener.StepExecutionListener;
 import com.coreyd97.stepper.variable.StepVariable;
 import com.coreyd97.stepper.variable.listener.StepVariableListener;
 
@@ -18,7 +15,8 @@ import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
-import java.util.List;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 
 public class StepPanel extends JPanel implements StepVariableListener {
 
@@ -27,9 +25,7 @@ public class StepPanel extends JPanel implements StepVariableListener {
 
     private IMessageEditor requestEditor;
     private IMessageEditor responseEditor;
-    private VariableTable variableTable;
     private JPanel topPanel;
-    private JSplitPane mainSplitPane;
     private JSplitPane reqRespSplitPane;
     private JLabel responseLengthLabel;
     private JLabel responseTimeLabel;
@@ -52,7 +48,6 @@ public class StepPanel extends JPanel implements StepVariableListener {
         this.step.registerRequestEditor(this.requestEditor);
         this.step.registerResponseEditor(this.responseEditor);
 
-        this.variableTable = new VariableTable(step);
         JPanel responseWrapper = new JPanel(new BorderLayout());
         JPanel responseInfoWrapper = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         responseInfoWrapper.add(new JLabel("Response Length: "));
@@ -74,17 +69,36 @@ public class StepPanel extends JPanel implements StepVariableListener {
 
         responseWrapper.add(responseEditor.getComponent(), BorderLayout.CENTER);
         responseWrapper.add(responseInfoWrapper, BorderLayout.SOUTH);
-        this.reqRespSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, requestEditor.getComponent(), responseWrapper);
+
+        VariablePanel preExecVariablePanel = new PreExecVariablePanel(step.getVariableManager());
+        JSplitPane requestSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT,
+                requestEditor.getComponent(), preExecVariablePanel);
+        requestSplitPane.setResizeWeight(0.8);
+
+        VariablePanel postExecVariablePanel = new PostExecVariablePanel(step.getVariableManager());
+        JSplitPane responseSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT,
+                responseWrapper, postExecVariablePanel);
+        responseSplitPane.setResizeWeight(0.8);
+
+        //Make resizing one split pane also resize the other
+        requestSplitPane.addPropertyChangeListener(JSplitPane.DIVIDER_LOCATION_PROPERTY,
+                new PropertyChangeListener() {
+                    @Override
+                    public void propertyChange(PropertyChangeEvent pce) {
+                        responseSplitPane.setDividerLocation(requestSplitPane.getDividerLocation());
+                    }
+                });
+        //Same as above
+        responseSplitPane.addPropertyChangeListener(JSplitPane.DIVIDER_LOCATION_PROPERTY,
+                new PropertyChangeListener() {
+                    @Override
+                    public void propertyChange(PropertyChangeEvent pce) {
+                        requestSplitPane.setDividerLocation(responseSplitPane.getDividerLocation());
+                    }
+                });
+
+        this.reqRespSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, requestSplitPane, responseSplitPane);
         this.reqRespSplitPane.setResizeWeight(0.5);
-
-        JPanel variableWrapper = new JPanel(new BorderLayout());
-        JScrollPane variableScrollPane = new JScrollPane(variableTable);
-        variableWrapper.add(variableScrollPane, BorderLayout.CENTER);
-        variableWrapper.add(new VariableControlPanel(step.getVariableManager(), variableTable), BorderLayout.SOUTH);
-        variableWrapper.setPreferredSize(new Dimension(300,150));
-
-        this.mainSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, reqRespSplitPane, variableWrapper);
-        this.mainSplitPane.setResizeWeight(1.0);
 
         this.topPanel = new JPanel(new BorderLayout());
         JButton executeStepButton = new JButton("Execute Step");
@@ -151,7 +165,7 @@ public class StepPanel extends JPanel implements StepVariableListener {
         this.topPanel.add(httpServicePanel, BorderLayout.CENTER);
 
         this.add(topPanel, BorderLayout.NORTH);
-        this.add(mainSplitPane, BorderLayout.CENTER);
+        this.add(reqRespSplitPane, BorderLayout.CENTER);
         this.setPreferredSize(new Dimension(450, 0));
         this.setMaximumSize(new Dimension(450, 0));
         this.setMinimumSize(new Dimension(450, 0));

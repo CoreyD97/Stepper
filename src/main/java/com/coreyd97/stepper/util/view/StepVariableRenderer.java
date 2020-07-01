@@ -11,14 +11,14 @@ import java.awt.*;
  */
 public class StepVariableRenderer extends DefaultTableCellRenderer {
 
-    @Override
-    public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-        if(!(value instanceof StepVariable)){
-            return super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-        }
-
-        Component c = ((StepVariable) value).getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-        return c != null ? c : super.getTableCellRendererComponent(table, "", isSelected, hasFocus, row, column);
-    }
+//    @Override
+//    public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+//        if(!(value instanceof StepVariable)){
+//            return super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+//        }
+//
+//        Component c = ((StepVariable) value).getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+//        return c != null ? c : super.getTableCellRendererComponent(table, "", isSelected, hasFocus, row, column);
+//    }
 }
 

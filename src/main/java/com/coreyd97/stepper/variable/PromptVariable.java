@@ -9,7 +9,7 @@ import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.util.UUID;
 
-public class PromptVariable extends StepVariable {
+public class PromptVariable extends PreExecutionStepVariable {
 
     public PromptVariable(){
         this(UUID.randomUUID().toString());
@@ -20,13 +20,13 @@ public class PromptVariable extends StepVariable {
     }
 
     @Override
-    public void setCondition(String regex) {
-        //No condition.
+    public String getType() {
+        return "Prompt";
     }
 
     @Override
-    public String getConditionText() {
-        return null;
+    public String getValuePreview() {
+        return String.format("$PROMPT_VALUE:%s$", getIdentifier());
     }
 
     @Override
@@ -40,22 +40,5 @@ public class PromptVariable extends StepVariable {
                 "Variable Value", JOptionPane.INFORMATION_MESSAGE);
         this.value = newValue;
         notifyChanges();
-    }
-
-    @Override
-    public void updateValueFromStep(Step step) {
-
-    }
-
-    @Override
-    public void updateVariableAfterExecution(StepExecutionInfo executionInfo) {
-
-    }
-
-    @Override
-    public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-        DefaultTableCellRenderer defaultRenderer = new DefaultTableCellRenderer();
-        Component c = defaultRenderer.getTableCellRendererComponent(table, "", isSelected, hasFocus, row, column);
-        return c;
     }
 }

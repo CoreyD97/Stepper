@@ -4,6 +4,7 @@ import burp.*;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.coreyd97.stepper.sequence.StepSequence;
 import com.coreyd97.stepper.sequencemanager.SequenceManager;
+import com.coreyd97.stepper.variable.PreExecutionStepVariable;
 import com.coreyd97.stepper.variable.StepVariable;
 
 import javax.swing.*;

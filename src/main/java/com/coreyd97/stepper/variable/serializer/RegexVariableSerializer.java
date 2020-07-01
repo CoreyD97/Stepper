@@ -21,6 +21,7 @@ public class RegexVariableSerializer implements JsonSerializer<RegexVariable>, J
     @Override
     public JsonElement serialize(RegexVariable src, Type typeOfSrc, JsonSerializationContext context) {
         JsonObject obj = new JsonObject();
+        obj.addProperty("type", src.getType());
         obj.addProperty("identifier", src.getIdentifier());
         obj.addProperty("value", src.getValue());
         obj.addProperty("pattern", src.getConditionText());

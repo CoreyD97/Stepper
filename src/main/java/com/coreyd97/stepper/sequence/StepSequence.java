@@ -9,6 +9,7 @@ import com.coreyd97.stepper.sequence.view.SequenceContainer;
 import com.coreyd97.stepper.sequence.view.StepSequenceTab;
 import com.coreyd97.stepper.step.Step;
 import com.coreyd97.stepper.step.StepExecutionInfo;
+import com.coreyd97.stepper.variable.PreExecutionStepVariable;
 import com.coreyd97.stepper.variable.VariableManager;
 import com.coreyd97.stepper.step.listener.StepListener;
 import com.coreyd97.stepper.step.view.StepPanel;
@@ -165,7 +166,7 @@ public class StepSequence
     }
 
     /**
-     * Returns all variables up to and excluding the given step.
+     * Returns all pre and post variables up to the given step, and the pre variables of the step.
      * If a variable is overwritten in a later step, only includes the latest instance.
      * @return List of all variables
      */
@@ -176,7 +177,12 @@ public class StepSequence
         }
 
         for (Step step : this.steps) {
-            if(uptoStep == step) break;
+            if(uptoStep == step){
+                for (PreExecutionStepVariable preExecutionVariable : step.getVariableManager().getPreExecutionVariables()) {
+                    rolling.put(preExecutionVariable.getIdentifier(), preExecutionVariable);
+                }
+                break;
+            }
             for (StepVariable variable : step.getVariableManager().getVariables()) {
                 rolling.put(variable.getIdentifier(), variable);
             }

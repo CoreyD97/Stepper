@@ -1,7 +1,6 @@
 package com.coreyd97.stepper.step;
 
-import com.coreyd97.stepper.variable.StepVariable;
-import com.coreyd97.stepper.variable.VariableManager;
+import com.coreyd97.stepper.variable.*;
 
 public class StepVariableManager extends VariableManager {
 
@@ -14,17 +13,19 @@ public class StepVariableManager extends VariableManager {
 
     public void updateVariablesBeforeExecution(){
         for (StepVariable variable : this.variables) {
-            variable.updateVariableBeforeExecution();
+            if(variable instanceof PreExecutionStepVariable)
+                ((PreExecutionStepVariable) variable).updateVariableBeforeExecution();
         }
     }
 
     public void updateVariablesAfterExecution(StepExecutionInfo executionInfo){
         for (StepVariable variable : this.variables) {
-            variable.updateVariableAfterExecution(executionInfo);
+            if(variable instanceof PostExecutionStepVariable)
+            ((PostExecutionStepVariable) variable).updateVariableAfterExecution(executionInfo);
         }
     }
 
-    public void refreshVariableFromPreviousExecution(StepVariable variable){
+    public void updateVariableWithPreviousExecutionResult(PostExecutionStepVariable variable){
         variable.updateVariableAfterExecution(this.step.getLastExecutionResult());
     }
 }

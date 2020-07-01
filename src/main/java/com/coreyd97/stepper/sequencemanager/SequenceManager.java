@@ -58,10 +58,15 @@ public class SequenceManager {
      * @return
      */
     public HashMap<StepSequence, List<StepVariable>> getRollingVariablesFromAllSequences(){
-        HashMap<StepSequence, List<StepVariable>> allVariables = new HashMap<>();
-        for (StepSequence stepSequence : this.sequences) {
-            allVariables.put(stepSequence, stepSequence.getRollingVariablesForWholeSequence());
+        try {
+            HashMap<StepSequence, List<StepVariable>> allVariables = new HashMap<>();
+            for (StepSequence stepSequence : this.sequences) {
+                allVariables.put(stepSequence, stepSequence.getRollingVariablesForWholeSequence());
+            }
+            return allVariables;
+        }catch (Exception e){
+            e.printStackTrace();
         }
-        return allVariables;
+        return null;
     }
 }
