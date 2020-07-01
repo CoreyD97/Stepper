@@ -1,8 +1,8 @@
 package com.coreyd97.stepper.step.view;
 
-import com.coreyd97.stepper.step.Step;
+import com.coreyd97.stepper.util.view.PostExecutionStepVariableEditor;
+import com.coreyd97.stepper.util.view.PostExecutionStepVariableRenderer;
 import com.coreyd97.stepper.variable.PostExecutionStepVariable;
-import com.coreyd97.stepper.variable.PreExecutionStepVariable;
 import com.coreyd97.stepper.variable.VariableManager;
 import com.coreyd97.stepper.variable.StepVariable;
 import com.coreyd97.stepper.variable.listener.StepVariableListener;
@@ -17,8 +17,8 @@ public class PostExecutionVariableTable extends JTable {
     public PostExecutionVariableTable(VariableManager variableManager){
         super();
         this.setModel(new PostExecutionVariableTableModel(variableManager));
-//        this.getColumnModel().getColumn(1).setCellRenderer(new StepVariableRenderer());
-//        this.setDefaultEditor(StepVariable.class, new StepVariableEditor());
+        this.getColumnModel().getColumn(2).setCellRenderer(new PostExecutionStepVariableRenderer());
+        this.getColumnModel().getColumn(2).setCellEditor(new PostExecutionStepVariableEditor());
         this.createDefaultTableHeader();
 
         FontMetrics metrics = this.getFontMetrics(this.getFont());
@@ -74,7 +74,7 @@ public class PostExecutionVariableTable extends JTable {
             switch (col){
                 case 0: return variable.getType();
                 case 1: return variable.getIdentifier();
-                case 2: return variable.getConditionText();
+                case 2: return variable;
                 case 3: return variable.getValue();
             }
 
