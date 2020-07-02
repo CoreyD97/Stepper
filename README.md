@@ -1,11 +1,15 @@
-<table align="center"><tr><td align="center" width="9999">
+<p align="center">
+  <h1 align="center">Stepper</h1>
+  <h5 align="center">A Multi-Stage Repeater Replacement For Burp Suite</h5>
+</p>
 
-# Stepper
-  
-##### A Multi-Stage Repeater Replacement For Burp Suite
-
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/CoreyD97/Stepper/Java%20CI%20with%20Gradle?style=for-the-badge) ![GitHub watchers](https://img.shields.io/github/watchers/CoreyD97/Stepper?label=Watchers&style=for-the-badge) ![GitHub stars](https://img.shields.io/github/stars/CoreyD97/Stepper?style=for-the-badge) ![GitHub All Releases](https://img.shields.io/github/downloads/CoreyD97/Stepper/total?style=for-the-badge) ![GitHub](https://img.shields.io/github/license/CoreyD97/Stepper?style=for-the-badge)
-</td></tr></table>
+<p align="center">
+  <img src="https://img.shields.io/github/workflow/status/CoreyD97/Stepper/Java%20CI%20with%20Gradle?style=for-the-badge" alt="GitHub Workflow Status">
+  <img src="https://img.shields.io/github/watchers/CoreyD97/Stepper?label=Watchers&style=for-the-badge" alt="GitHub Watchers">
+  <img src="https://img.shields.io/github/stars/CoreyD97/Stepper?style=for-the-badge" alt="GitHub Stars">
+  <img src="https://img.shields.io/github/downloads/CoreyD97/Stepper/total?style=for-the-badge" alt="GitHub All Releases">
+  <img src="https://img.shields.io/github/license/CoreyD97/Stepper?style=for-the-badge" alt="GitHub License">
+</p>
 
 **Created By: [![@CoreyD97](https://img.shields.io/twitter/follow/CoreyD97?style=social)](https://twitter.com/coreyd97/)**
 
@@ -32,6 +36,8 @@
 4. Optional: Define variables for steps, providing a regular expression which will be used to extract the values from the response.
    Tip: You can execute a single step to test your regular expressions using the button in the top right.
 5. Execute the entire sequence using the button at the bottom of the panel.
+6. If you like the project, please give the repo a star! <3
+![Stargazers](https://starchart.cc/coreyd97/Stepper.svg)
 
 
 **Variables:**  
@@ -63,4 +69,4 @@ To use a variable in a request after it has been defined, either use the option 
 
 
 **Future Plans:**  
-* Allow steps to be reordered
+~* Allow steps to be reordered~
