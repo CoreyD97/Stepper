@@ -34,6 +34,9 @@ public class OptionsPanel extends JPanel {
     private void buildPanel() {
         PanelBuilder panelBuilder = new PanelBuilder(preferences);
 
+        ComponentGroup configGroup = panelBuilder.createComponentGroup("Config");
+        configGroup.addPreferenceComponent(Globals.PREF_UPDATE_REQUEST_LENGTH, "Automatically update the Content-Length header");
+
         ComponentGroup toolEnabledGroup = panelBuilder.createComponentGroup("Allow Variables Usage");
         JCheckBox allToolsCheckbox = toolEnabledGroup.addPreferenceComponent(Globals.PREF_VARS_IN_ALL_TOOLS, "All Tools");
         JCheckBox proxyCheckbox = toolEnabledGroup.addPreferenceComponent(Globals.PREF_VARS_IN_PROXY, "Proxy");
@@ -147,7 +150,8 @@ public class OptionsPanel extends JPanel {
         JPanel builtPanel = null;
         try {
             builtPanel = panelBuilder.build(new JComponent[][]{new JComponent[]{toolEnabledGroup, importGroup},
-                                                                new JComponent[]{toolEnabledGroup, exportGroup}},
+                                                                new JComponent[]{toolEnabledGroup, exportGroup},
+                                                                new JComponent[]{configGroup, configGroup}},
                                             Alignment.TOPMIDDLE, 1.0, 1.0);
         } catch (Exception e) {
             builtPanel = new JPanel();
