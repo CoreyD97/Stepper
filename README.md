@@ -1,6 +1,13 @@
-## Stepper
+<table align="center"><tr><td align="center" width="9999">
+
+# Stepper
+  
 ##### A Multi-Stage Repeater Replacement For Burp Suite
-**Created By: [@CoreyD97](https://twitter.com/CoreyD97)**
+
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/CoreyD97/Stepper/Java%20CI%20with%20Gradle?style=for-the-badge) ![GitHub watchers](https://img.shields.io/github/watchers/CoreyD97/Stepper?label=Watchers&style=for-the-badge) ![GitHub stars](https://img.shields.io/github/stars/CoreyD97/Stepper?style=for-the-badge) ![GitHub All Releases](https://img.shields.io/github/downloads/CoreyD97/Stepper/total?style=for-the-badge) ![GitHub](https://img.shields.io/github/license/CoreyD97/Stepper?style=for-the-badge)
+</td></tr></table>
+
+**Created By: [![@CoreyD97](https://img.shields.io/twitter/follow/CoreyD97?style=social)](https://twitter.com/coreyd97/)**
 
 *Stepper is designed to be a natural evolution of Burp Suite's Repeater tool, providing the ability to create sequences of steps and define regular expressions to extract values from responses which can then be used in subsequent steps.*
   
