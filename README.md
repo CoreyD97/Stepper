@@ -11,7 +11,7 @@
   <img src="https://img.shields.io/github/license/CoreyD97/Stepper?style=for-the-badge" alt="GitHub License">
 </p>
 
-**Created By: [![@CoreyD97](https://img.shields.io/twitter/follow/CoreyD97?style=social)](https://twitter.com/coreyd97/)**
+**Created By: CoreyD97 [![@CoreyD97](https://img.shields.io/twitter/follow/CoreyD97?style=social)](https://twitter.com/coreyd97/)**
 
 *Stepper is designed to be a natural evolution of Burp Suite's Repeater tool, providing the ability to create sequences of steps and define regular expressions to extract values from responses which can then be used in subsequent steps.*
   
