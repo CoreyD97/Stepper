@@ -4,14 +4,11 @@ import burp.*;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.coreyd97.stepper.sequence.StepSequence;
 import com.coreyd97.stepper.sequencemanager.SequenceManager;
-import com.coreyd97.stepper.variable.PreExecutionStepVariable;
+import com.coreyd97.stepper.step.Step;
 import com.coreyd97.stepper.variable.StepVariable;
 
 import javax.swing.*;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -19,6 +16,7 @@ public class MessageProcessor implements IHttpListener {
 
     private final SequenceManager sequenceManager;
     private final Preferences preferences;
+    private static final String EXECUTE_BEFORE_REGEX = "X-Stepper-Execute-Before:(.*)";
 
     public MessageProcessor(SequenceManager sequenceManager, Preferences preferences){
         this.sequenceManager = sequenceManager;
@@ -39,9 +37,40 @@ public class MessageProcessor implements IHttpListener {
     @Override
     public void processHttpMessage(int toolFlag, boolean messageIsRequest, IHttpRequestResponse messageInfo) {
         if(isValidTool(toolFlag) && messageIsRequest){
+
+            //Check if headers ask us to execute a request before the request.
+            IRequestInfo requestInfo = Stepper.callbacks.getHelpers().analyzeRequest(messageInfo);
+            List<String> requestHeaders = requestInfo.getHeaders();
+            boolean hasBeforeExecuteHeader = false;
+            for (Iterator<String> iterator = requestHeaders.iterator(); iterator.hasNext(); ) {
+                String header = iterator.next();
+                Pattern beforeHeaderPattern = Pattern.compile(EXECUTE_BEFORE_REGEX);
+                Matcher m = beforeHeaderPattern.matcher(header);
+                if (m.matches()) {
+                    Optional<StepSequence> sequenceToExecuteBefore = sequenceManager.getSequences().stream()
+                            .filter(sequence -> sequence.getTitle().equalsIgnoreCase(m.group(1).trim()))
+                            .findFirst();
+                    if (sequenceToExecuteBefore.isPresent()) {
+                        sequenceToExecuteBefore.get().executeBlocking();
+                    }
+                    hasBeforeExecuteHeader = true;
+                    iterator.remove(); //Remove the header from the list to be sent.
+                }
+            }
+
+            byte[] request;
+            if(hasBeforeExecuteHeader){
+                int requestLength = messageInfo.getRequest().length;
+                byte[] body = Arrays.copyOfRange(messageInfo.getRequest(), requestInfo.getBodyOffset(), requestLength);
+                request = Stepper.callbacks.getHelpers().buildHttpMessage(requestHeaders, body);
+            }else{
+                request = messageInfo.getRequest();
+            }
+
+
             HashMap<StepSequence, List<StepVariable>> allVariables = sequenceManager.getRollingVariablesFromAllSequences();
 
-            if(allVariables.size() > 0 && hasStepVariable(messageInfo.getRequest())) {
+            if(allVariables.size() > 0 && hasStepVariable(request)) {
 
                 if(isUnprocessable(messageInfo.getRequest())){
                     //If there's unicode issues, we're likely acting on binary data. Warn the user.
@@ -53,8 +82,22 @@ public class MessageProcessor implements IHttpListener {
                 }
 
                 try {
-                    byte[] newRequest = makeReplacements(messageInfo.getRequest(), allVariables);
+                    byte[] newRequest = makeReplacements(request, allVariables);
+
+                    if(preferences.getSetting(Globals.PREF_UPDATE_REQUEST_LENGTH)){
+                        IRequestInfo newRequestInfo = Stepper.callbacks.getHelpers().analyzeRequest(newRequest);
+                        List<String> newRequestHeaders = newRequestInfo.getHeaders();
+                        int contentLength = newRequest.length - newRequestInfo.getBodyOffset();
+                        newRequestHeaders.removeIf(header -> header.startsWith("Content-Length:"));
+                        newRequestHeaders.add("Content-Length: " + contentLength);
+
+                        byte[] newBody = Arrays.copyOfRange(newRequest, newRequestInfo.getBodyOffset(), newRequest.length);
+
+                        newRequest = Stepper.callbacks.getHelpers().buildHttpMessage(newRequestHeaders, newBody);
+                    }
+
                     messageInfo.setRequest(newRequest);
+                    
                 } catch (UnsupportedOperationException e) { /**Read-only message**/ }
             }
         }

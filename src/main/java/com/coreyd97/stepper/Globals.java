@@ -13,4 +13,5 @@ public class Globals {
     public static final String PREF_VARS_IN_SEQUENCER = "enableVarsInSequencer";
     public static final String PREF_VARS_IN_INTRUDER = "enableVarsInIntruder";
     public static final String PREF_VARS_IN_SPIDER = "enableVarsInSpider";
+    public static final String PREF_UPDATE_REQUEST_LENGTH = "updateRequestLength";
 }

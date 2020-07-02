@@ -16,7 +16,6 @@ import com.coreyd97.stepper.variable.StepVariable;
 import com.coreyd97.stepper.variable.serializer.PromptVariableSerializer;
 import com.coreyd97.stepper.variable.serializer.RegexVariableSerializer;
 import com.coreyd97.stepper.variable.serializer.VariableSerializer;
-import com.google.gson.InstanceCreator;
 import com.google.gson.reflect.TypeToken;
 
 import java.util.ArrayList;
@@ -63,5 +62,6 @@ public class StepperPreferenceFactory extends PreferenceFactory {
         prefs.registerSetting(Globals.PREF_VARS_IN_INTRUDER, Boolean.class, true, Preferences.Visibility.GLOBAL);
         prefs.registerSetting(Globals.PREF_VARS_IN_SPIDER, Boolean.class, true, Preferences.Visibility.GLOBAL);
         prefs.registerSetting(Globals.PREF_VARS_IN_SCANNER, Boolean.class, true, Preferences.Visibility.GLOBAL);
+        prefs.registerSetting(Globals.PREF_UPDATE_REQUEST_LENGTH, Boolean.class, true, Preferences.Visibility.GLOBAL);
     }
 }

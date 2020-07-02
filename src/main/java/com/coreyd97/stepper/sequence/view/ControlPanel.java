@@ -23,7 +23,7 @@ public class ControlPanel extends JPanel implements SequenceExecutionListener {
 
         this.executeButton = new JButton("Execute Sequence");
         this.executeButton.addActionListener(actionEvent -> {
-            this.stepSequence.executeSteps();
+            this.stepSequence.executeAsync();
         });
 
         //TODO Implement sequence cancel

@@ -41,54 +41,56 @@ public class StepSequence
         this("Step Sequence");
     }
 
-    public void executeSteps(){
-        new Thread(() -> {
-            synchronized (StepSequence.this) {
-                StepSequenceTab tabUI = Stepper.getUI().getTabForStepManager(this);
-                SequenceContainer sequenceContainer = tabUI.getStepsContainer();
+    public void executeBlocking(){
+        synchronized (StepSequence.this) {
+            StepSequenceTab tabUI = Stepper.getUI().getTabForStepManager(this);
+            SequenceContainer sequenceContainer = tabUI.getStepsContainer();
 
-                for (SequenceExecutionListener stepListener : this.sequenceExecutionListeners) {
-                    stepListener.beforeSequenceStart(this.steps);
-                }
-                for (Step step : this.steps) {
-                    //Since we can't add a listener to the messageEditors, we must update
-                    //Our request content before executing instead :(
-                    StepPanel panel = sequenceContainer.getPanelForStep(step);
-                    step.setRequestBody(panel.getRequestEditor().getMessage());
+            for (SequenceExecutionListener stepListener : this.sequenceExecutionListeners) {
+                stepListener.beforeSequenceStart(this.steps);
+            }
+            for (Step step : this.steps) {
+                //Since we can't add a listener to the messageEditors, we must update
+                //Our request content before executing instead :(
+                StepPanel panel = sequenceContainer.getPanelForStep(step);
+                step.setRequestBody(panel.getRequestEditor().getMessage());
 
-                    if(!step.isReadyToExecute()){
-                        JOptionPane.showMessageDialog(null, "One or more steps are incomplete.");
-                        for (SequenceExecutionListener stepExecutionListener : this.sequenceExecutionListeners) {
-                            stepExecutionListener.afterSequenceEnd(false);
-                        }
-                        return;
+                if(!step.isReadyToExecute()){
+                    JOptionPane.showMessageDialog(null, "One or more steps are incomplete.");
+                    for (SequenceExecutionListener stepExecutionListener : this.sequenceExecutionListeners) {
+                        stepExecutionListener.afterSequenceEnd(false);
                     }
-                }
-
-                boolean sequenceSuccess = false;
-                try {
-                    for (Step step : this.steps) {
-                        //Set step panel as selected panel
-                        StepPanel panel = sequenceContainer.getPanelForStep(step);
-                        sequenceContainer.setActivePanel(panel);
-                        List<StepVariable> rollingReplacements = this.getRollingVariablesUpToStep(step);
-
-                        //Execute the step
-                        StepExecutionInfo stepExecutionInfo = step.executeStep(rollingReplacements);
-                        this.sequenceExecutionListeners.forEach(listener -> listener.sequenceStepExecuted(stepExecutionInfo));
-                    }
-                    sequenceSuccess = true;
-                }catch (SequenceCancelledException e){
-                    //User cancelled. Ignore it.
-                }catch (SequenceExecutionException e){
-                    JOptionPane.showMessageDialog(Stepper.getUI().getUiComponent(), e.getMessage(),
-                            "Sequence Stopped", JOptionPane.ERROR_MESSAGE);
-                }
-                for (SequenceExecutionListener stepLExecutionistener : sequenceExecutionListeners) {
-                    stepLExecutionistener.afterSequenceEnd(sequenceSuccess);
+                    return;
                 }
             }
-        }).start();
+
+            boolean sequenceSuccess = false;
+            try {
+                for (Step step : this.steps) {
+                    //Set step panel as selected panel
+                    StepPanel panel = sequenceContainer.getPanelForStep(step);
+                    sequenceContainer.setActivePanel(panel);
+                    List<StepVariable> rollingReplacements = this.getRollingVariablesUpToStep(step);
+
+                    //Execute the step
+                    StepExecutionInfo stepExecutionInfo = step.executeStep(rollingReplacements);
+                    this.sequenceExecutionListeners.forEach(listener -> listener.sequenceStepExecuted(stepExecutionInfo));
+                }
+                sequenceSuccess = true;
+            }catch (SequenceCancelledException e){
+                //User cancelled. Ignore it.
+            }catch (SequenceExecutionException e){
+                JOptionPane.showMessageDialog(Stepper.getUI().getUiComponent(), e.getMessage(),
+                        "Sequence Stopped", JOptionPane.ERROR_MESSAGE);
+            }
+            for (SequenceExecutionListener stepLExecutionistener : sequenceExecutionListeners) {
+                stepLExecutionistener.afterSequenceEnd(sequenceSuccess);
+            }
+        }
+    }
+
+    public void executeAsync(){
+        new Thread(() -> executeBlocking()).start();
     }
 
     public void addStep(Step step){
