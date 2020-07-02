@@ -13,7 +13,12 @@
 ![Replacement Preview Tab](images/with-replacements.png)
 *Previewing message with replacements to be utilised*
 
-**Instructions:**
+**Building:**
+1. Clone the repo
+2. Use gradle to build the jar: `gradle jar`
+3. Add the built jar (`./releases/Stepper.jar`) to Burp Suite 
+
+**Usage:**
 1. Create a new sequence. Double-click the title to set a suitable name.
 2. Optional: Configure the global variables to use for the sequence.
 3. Add your steps to the sequence manually, or using the context menu entry.
