@@ -84,7 +84,7 @@ public class AboutPanel extends JPanel {
         });
         contactPanel.add(new JLabel("Created by:"));
         contactPanel.add(twitterButton);
-        contactPanel.add(new JLabel("Corey Arthur, @CoreyD97"));
+        contactPanel.add(new JLabel("Corey Arthur (@CoreyD97)"));
         contactPanel.add(viewOnGithubButton);
         contactPanel.setBorder(BorderFactory.createEmptyBorder(0,10,15,0));
 
@@ -113,23 +113,24 @@ public class AboutPanel extends JPanel {
                     "values from responses which can then be used in subsequent steps.\n\n";
             String instructionsHeader = "Instructions:\n";
             String instructions = "1. Create a new sequence. Double-click the title to set a suitable name.\n" +
-                    "2. Optional: Configure the global variables to use for the sequence.\n" +
-                    "3. Add your steps to the sequence manually, or using the context menu entry.\n" +
-                    "4. Optional: Define variables for steps, providing a regular expression which will " +
-                    "be used to extract the values from the response.\n" +
-                    "   Tip: You can execute a single step to test your regular expressions using the button in the top right.\n" +
+                    "2. Add your steps to the sequence manually, or using the context menu entry.\n" +
+                    "3. Optional: Configure the global variables to use for the sequence.\n" +
+                    "4. Optional: Define variables for steps.\n" +
+                    "  \u2022 Pre-execution variables obtain their value before the step is run. Useful for one-time passcodes etc.\n" +
+                    "  \u2022 Post-execution variables extract their value from the step's response using regular expressions.\n" +
+                    "  Tip: You can execute a single step to test your regular expressions using the button in the top right.\n" +
                     "5. Execute the entire sequence using the button at the bottom of the panel.\n\n" +
                     "Steps can be rearranged by right-clicking their tab, and selecting their destination.\n";
 
             String variableHelpHeader = "Variables:\n";
-            String variableHelp = "Variables can be defined for use within a sequence. Variables consist of an " +
-                    "identifier and a regular expression, or in the case of initial variables defined in the Globals tab, an identifier and value.\n" +
-                    "Step variables, defined with a regular expression, have their values set from the response of the step in which they are defined. " +
-                    "The variable is then available for use within the request of subsequent steps after their definition.\n" +
-                    "However, Global variables, defined with a literal initial value, can be used throughout the sequence.\n\n" +
-                    "Both step and global variables may be updated in later steps after their definition.\n\n";
+            String variableHelp = "Variables can be defined for use within requests made as part of a sequence " +
+                    "and can take three formats.\n" +
+                    "Global Variables: Static values available to all requests in the sequence.\n" +
+                    "Pre-execution Variables: Prompts the user for a value. Can be used in the step which it is defined and any subsequent requests.\n" +
+                    "Post-execution Variables: Define a regex to extract data from a steps response to be used in subsequent requests." +
+                    "All variables may be updated in later steps after their definition.\n\n";
 
-            String regularExpressionHeader = "Regular Expression Variables:\n";
+            String regularExpressionHeader = "Post-Execution (Regex) Variables:\n";
             String regularExpressionHelp = "Variables which are defined with a regular expression are updated each time " +
                     "the step in which they are defined is executed.\n" +
                     "The regular expression is executed on the response received, with the first match being used as the new value.\n" +
@@ -142,11 +143,25 @@ public class AboutPanel extends JPanel {
                     "Expression: Hello (World|Earth)!, Result: World\n" +
                     "Expression: (?:Goodbye|Hello) (World)!, Result: World\n\n";
 
+            String variableUsageHeader = "Variable Usage:\n";
             String variableInsertion = "To use a variable in a request after it has been defined, either use the " +
                     "option in the context menu to copy the parameter to the clipboard, or manually insert it by " +
                     "including it as below:\n";
-            String variableExample = "$VAR:VARIABLE_IDENTIFIER$\n";
+            String variableExampleSequenceTitle = "In a sequence:  ";
+            String variableExampleSequenceUsage = "$VAR:VARIABLE_IDENTIFIER$\n";
+            String variableExampleToolTitle = "In other tools (e.g. repeater, intruder):  ";
+            String variableExampleToolUsage = "$VAR:SEQUENCE_NAME:VARIABLE_IDENTIFIER$\n\n";
 
+            String stepExecutionHeader = "Executing Sequences From Other Tools:\n";
+            String stepExecutionUsageA = "In some situations you might need to execute a sequence before making a request" +
+                    " in another tool, for example to use intruder on an endpoint which requires a token to be " +
+                    "generated prior to every request and included in the request body.\n" +
+                    "To solve this, you may define a sequence to carry out the steps to generate a token and " +
+                    "extract its value into a variable. You could then include this variable into your request " +
+                    "as usual, and add the header ";
+            String stepExecutionUsageItalics = "\"X-Stepper-Execute-Before: SEQUENCENAME\"";
+            String stepExecutionUsageB = " to the request. This will cause the sequence to be executed and variables " +
+                    "to be updated every time the request is sent.";
 
 //            aboutContent.getDocument().insertString(aboutContent.getText().length(), intro, italics);
 //            aboutContent.getDocument().insertString(aboutContent.getText().length(), instructionsHeader, bold);
@@ -164,8 +179,11 @@ public class AboutPanel extends JPanel {
             int offset = 0;
             String[] sections = new String[]{intro, instructionsHeader, instructions, variableHelpHeader, variableHelp
                     , regularExpressionHeader, regularExpressionHelp, regularExpressionExampleHeader
-                    , regularExpressionExample, variableInsertion, variableExample};
-            Style[] styles = new Style[]{italics, bold, null, bold, null, bold, null, bold, null, null, italics};
+                    , regularExpressionExample, variableUsageHeader, variableInsertion, variableExampleSequenceTitle, variableExampleSequenceUsage
+                    , variableExampleToolTitle, variableExampleToolUsage, stepExecutionHeader, stepExecutionUsageA,
+                    stepExecutionUsageItalics, stepExecutionUsageB};
+            Style[] styles = new Style[]{italics, bold, null, bold, null, bold, null, bold,
+                                            null, bold, null, null, italics, null, italics, bold, null, italics, null};
             String content = String.join("", sections);
             aboutContent.setText(content);
             for (int i = 0; i < sections.length; i++) {
