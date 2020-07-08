@@ -4,7 +4,6 @@ import burp.*;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.coreyd97.stepper.sequence.StepSequence;
 import com.coreyd97.stepper.sequencemanager.SequenceManager;
-import com.coreyd97.stepper.step.Step;
 import com.coreyd97.stepper.variable.StepVariable;
 
 import javax.swing.*;
@@ -16,7 +15,10 @@ public class MessageProcessor implements IHttpListener {
 
     private final SequenceManager sequenceManager;
     private final Preferences preferences;
-    private static final String EXECUTE_BEFORE_REGEX = "X-Stepper-Execute-Before:(.*)";
+    public static final String EXECUTE_BEFORE_REGEX = "X-Stepper-Execute-Before:(.*)";
+    public static final Pattern EXECUTE_BEFORE_PATTERN = Pattern.compile(EXECUTE_BEFORE_REGEX, Pattern.CASE_INSENSITIVE);
+    public static final String STEPPER_IGNORE_HEADER = "X-Stepper-Ignore";
+    public static final Pattern STEPPER_IGNORE_PATTERN = Pattern.compile(STEPPER_IGNORE_HEADER, Pattern.CASE_INSENSITIVE);
 
     public MessageProcessor(SequenceManager sequenceManager, Preferences preferences){
         this.sequenceManager = sequenceManager;
@@ -36,35 +38,26 @@ public class MessageProcessor implements IHttpListener {
 
     @Override
     public void processHttpMessage(int toolFlag, boolean messageIsRequest, IHttpRequestResponse messageInfo) {
+        IRequestInfo requestInfo = Stepper.callbacks.getHelpers().analyzeRequest(messageInfo.getRequest());
+
+        if(hasHeaderMatchingPattern(requestInfo, STEPPER_IGNORE_PATTERN)){
+            byte[] request = removeHeaderMatchingPattern(messageInfo.getRequest(), STEPPER_IGNORE_PATTERN);
+            messageInfo.setRequest(request);
+            return;
+        }
+
         if(isValidTool(toolFlag) && messageIsRequest){
 
-            //Check if headers ask us to execute a request before the request.
-            IRequestInfo requestInfo = Stepper.callbacks.getHelpers().analyzeRequest(messageInfo);
-            List<String> requestHeaders = requestInfo.getHeaders();
-            boolean hasBeforeExecuteHeader = false;
-            for (Iterator<String> iterator = requestHeaders.iterator(); iterator.hasNext(); ) {
-                String header = iterator.next();
-                Pattern beforeHeaderPattern = Pattern.compile(EXECUTE_BEFORE_REGEX);
-                Matcher m = beforeHeaderPattern.matcher(header);
-                if (m.matches()) {
-                    Optional<StepSequence> sequenceToExecuteBefore = sequenceManager.getSequences().stream()
-                            .filter(sequence -> sequence.getTitle().equalsIgnoreCase(m.group(1).trim()))
-                            .findFirst();
-                    if (sequenceToExecuteBefore.isPresent()) {
-                        sequenceToExecuteBefore.get().executeBlocking();
-                    }
-                    hasBeforeExecuteHeader = true;
-                    iterator.remove(); //Remove the header from the list to be sent.
-                }
-            }
+            byte[] request = messageInfo.getRequest();
+            List<StepSequence> postExecSequences = extractPostExecSequencesFromRequest(requestInfo);
+            if(postExecSequences.size() > 0){
+                //Remove the headers from the request
+                request = removeHeaderMatchingPattern(request, EXECUTE_BEFORE_PATTERN);
 
-            byte[] request;
-            if(hasBeforeExecuteHeader){
-                int requestLength = messageInfo.getRequest().length;
-                byte[] body = Arrays.copyOfRange(messageInfo.getRequest(), requestInfo.getBodyOffset(), requestLength);
-                request = Stepper.callbacks.getHelpers().buildHttpMessage(requestHeaders, body);
-            }else{
-                request = messageInfo.getRequest();
+                //Execute the sequences
+                for (StepSequence sequence : postExecSequences) {
+                    sequence.executeBlocking();
+                }
             }
 
 
@@ -82,18 +75,10 @@ public class MessageProcessor implements IHttpListener {
                 }
 
                 try {
-                    byte[] newRequest = makeReplacements(request, allVariables);
+                    byte[] newRequest = makeReplacementsForAllSequences(request, allVariables);
 
                     if(preferences.getSetting(Globals.PREF_UPDATE_REQUEST_LENGTH)){
-                        IRequestInfo newRequestInfo = Stepper.callbacks.getHelpers().analyzeRequest(newRequest);
-                        List<String> newRequestHeaders = newRequestInfo.getHeaders();
-                        int contentLength = newRequest.length - newRequestInfo.getBodyOffset();
-                        newRequestHeaders.removeIf(header -> header.startsWith("Content-Length:"));
-                        newRequestHeaders.add("Content-Length: " + contentLength);
-
-                        byte[] newBody = Arrays.copyOfRange(newRequest, newRequestInfo.getBodyOffset(), newRequest.length);
-
-                        newRequest = Stepper.callbacks.getHelpers().buildHttpMessage(newRequestHeaders, newBody);
+                        newRequest = updateContentLength(newRequest);
                     }
 
                     messageInfo.setRequest(newRequest);
@@ -125,6 +110,13 @@ public class MessageProcessor implements IHttpListener {
         }
     }
 
+    /**
+     * Used to make replacements with variables from this sequence only.
+     * Used for steps within a sequence.
+     * @param originalContent
+     * @param replacements
+     * @return
+     */
     public static byte[] makeReplacementsForSingleSequence(byte[] originalContent, List<StepVariable> replacements) {
         byte[] request = Arrays.copyOf(originalContent, originalContent.length);
         boolean hasReplaced = false;
@@ -143,20 +135,21 @@ public class MessageProcessor implements IHttpListener {
         request = requestString.getBytes();
 
         if(hasReplaced) {
-//            //Analyse the request with replacements to identify the headers and body
-//            IRequestInfo requestInfo = Stepper.callbacks.getHelpers().analyzeRequest(request);
-//            byte[] requestBody = Arrays.copyOfRange(request, requestInfo.getBodyOffset(), request.length);
-//
-//            //Built request
-//            return Stepper.callbacks.getHelpers().buildHttpMessage(requestInfo.getHeaders(), requestBody);
             return request;
         }else{
             return originalContent;
         }
     }
 
-    public static byte[] makeReplacements(byte[] originalContent,
-                                          HashMap<StepSequence, List<StepVariable>> replacements) {
+    /**
+     * Used to make replacements with variables from multiple sequences
+     * Used when variables have been used in tools other than stepper.
+     * @param originalContent
+     * @param replacements
+     * @return
+     */
+    public static byte[] makeReplacementsForAllSequences(byte[] originalContent,
+                                                         HashMap<StepSequence, List<StepVariable>> replacements) {
         byte[] request = Arrays.copyOf(originalContent, originalContent.length);
         boolean hasReplaced = false;
 
@@ -179,15 +172,73 @@ public class MessageProcessor implements IHttpListener {
         request = requestString.getBytes();
 
         if(hasReplaced) {
-//            //Analyse the request with replacements to identify the headers and body
-//            IRequestInfo requestInfo = Stepper.callbacks.getHelpers().analyzeRequest(request);
-//            byte[] requestBody = Arrays.copyOfRange(request, requestInfo.getBodyOffset(), request.length);
-//
-//            //Built request
-//            return Stepper.callbacks.getHelpers().buildHttpMessage(requestInfo.getHeaders(), requestBody);
             return request;
         }else{
             return originalContent;
         }
+    }
+
+    public static byte[] updateContentLength(byte[] request){
+        IRequestInfo newRequestInfo = Stepper.callbacks.getHelpers().analyzeRequest(request);
+        List<String> newRequestHeaders = newRequestInfo.getHeaders();
+        int contentLength = request.length - newRequestInfo.getBodyOffset();
+        newRequestHeaders.removeIf(header -> header.startsWith("Content-Length:"));
+        newRequestHeaders.add("Content-Length: " + contentLength);
+
+        byte[] newBody = Arrays.copyOfRange(request, newRequestInfo.getBodyOffset(), request.length);
+
+        return Stepper.callbacks.getHelpers().buildHttpMessage(newRequestHeaders, newBody);
+    }
+
+    /**
+     * Locates the X-Stepper-Execute-Before header and returns the matching sequence.
+     * @param requestInfo
+     * @return Optional value of step sequence to execute before the request.
+     */
+    public List<StepSequence> extractPostExecSequencesFromRequest(IRequestInfo requestInfo){
+        //Check if headers ask us to execute a request before the request.
+        List<String> requestHeaders = requestInfo.getHeaders();
+        ArrayList<StepSequence> postExecSequences = new ArrayList<>();
+
+        for (Iterator<String> iterator = requestHeaders.iterator(); iterator.hasNext(); ) {
+            String header = iterator.next();
+            Matcher m = MessageProcessor.EXECUTE_BEFORE_PATTERN.matcher(header);
+            if (m.matches()) {
+                Optional<StepSequence> postExecSequence = sequenceManager.getSequences().stream()
+                        .filter(sequence -> sequence.getTitle().equalsIgnoreCase(m.group(1).trim()))
+                        .findFirst();
+
+                if(postExecSequence.isPresent())
+                    postExecSequences.add(postExecSequence.get());
+            }
+        }
+        return postExecSequences;
+    }
+
+    public static boolean hasHeaderMatchingPattern(IRequestInfo requestInfo, Pattern pattern){
+        return requestInfo.getHeaders().stream().anyMatch(s -> pattern.asPredicate().test(s));
+    }
+
+    public static byte[] addHeaderToRequest(byte[] request, String header){
+        IRequestInfo requestInfo = Stepper.callbacks.getHelpers().analyzeRequest(request);
+        List<String> headers = requestInfo.getHeaders();
+        headers.add(header);
+
+        byte[] messageBody = Arrays.copyOfRange(request, requestInfo.getBodyOffset(), request.length);
+
+        return Stepper.callbacks.getHelpers().buildHttpMessage(headers, messageBody);
+    }
+
+    public static byte[] removeHeaderMatchingPattern(byte[] request, Pattern pattern){
+        IRequestInfo newRequestInfo = Stepper.callbacks.getHelpers().analyzeRequest(request);
+        List<String> newRequestHeaders = newRequestInfo.getHeaders();
+        newRequestHeaders.removeIf(s -> {
+            Matcher m = pattern.matcher(s);
+            return m.matches();
+        });
+
+        byte[] messageBody = Arrays.copyOfRange(request, newRequestInfo.getBodyOffset(), request.length);
+
+        return Stepper.callbacks.getHelpers().buildHttpMessage(newRequestHeaders, messageBody);
     }
 }

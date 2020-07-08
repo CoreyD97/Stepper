@@ -4,6 +4,7 @@ import burp.IHttpRequestResponse;
 import burp.IHttpService;
 import burp.IMessageEditor;
 import burp.IMessageEditorController;
+import com.coreyd97.stepper.Globals;
 import com.coreyd97.stepper.MessageProcessor;
 import com.coreyd97.stepper.Stepper;
 import com.coreyd97.stepper.exception.SequenceCancelledException;
@@ -129,6 +130,11 @@ public class Step implements IMessageEditorController {
                 if(result == JOptionPane.NO_OPTION) throw new SequenceCancelledException("Binary data, user cancelled.");
             }
             builtRequest = MessageProcessor.makeReplacementsForSingleSequence(requestWithoutReplacements, replacements);
+
+            if(Stepper.getPreferences().getSetting(Globals.PREF_UPDATE_REQUEST_LENGTH)){
+                builtRequest = MessageProcessor.updateContentLength(builtRequest);
+            }
+
         }else{
             builtRequest = Arrays.copyOf(requestWithoutReplacements, requestWithoutReplacements.length);
         }
@@ -140,6 +146,9 @@ public class Step implements IMessageEditorController {
         //Part of hack to match VariableReplacementTab with actual IMessageEditorController
         this.httpService = Stepper.callbacks.getHelpers().buildHttpService(
                 this.hostname, this.port, this.isSSL);
+
+        //Add X-Stepper-Ignore header so its not picked up by messageProcessor
+        builtRequest = MessageProcessor.addHeaderToRequest(builtRequest, MessageProcessor.STEPPER_IGNORE_HEADER);
 
         long start = new Date().getTime();
         //Update with response
