@@ -1,22 +1,28 @@
 package com.coreyd97.stepper.step.view;
 
 import burp.IMessageEditor;
-import com.coreyd97.stepper.*;
+import com.coreyd97.BurpExtenderUtilities.Alignment;
+import com.coreyd97.BurpExtenderUtilities.PanelBuilder;
+import com.coreyd97.stepper.Stepper;
 import com.coreyd97.stepper.exception.SequenceCancelledException;
 import com.coreyd97.stepper.exception.SequenceExecutionException;
 import com.coreyd97.stepper.sequence.view.SequenceContainer;
 import com.coreyd97.stepper.step.Step;
 import com.coreyd97.stepper.step.StepExecutionInfo;
 import com.coreyd97.stepper.step.listener.StepExecutionAdapter;
+import com.coreyd97.stepper.util.Utils;
 import com.coreyd97.stepper.variable.StepVariable;
 import com.coreyd97.stepper.variable.listener.StepVariableListener;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.net.URL;
 
 public class StepPanel extends JPanel implements StepVariableListener {
 
@@ -25,14 +31,11 @@ public class StepPanel extends JPanel implements StepVariableListener {
 
     private IMessageEditor requestEditor;
     private IMessageEditor responseEditor;
-    private JPanel topPanel;
     private JSplitPane reqRespSplitPane;
     private JLabel responseLengthLabel;
     private JLabel responseTimeLabel;
 
-    private JTextField httpAddressField;
-    private JSpinner httpPortSpinner;
-    private JCheckBox httpIsSecure;
+    private JLabel targetLabel;
 
     public StepPanel(SequenceContainer sequenceContainer, Step step){
         super(new BorderLayout());
@@ -164,11 +167,22 @@ public class StepPanel extends JPanel implements StepVariableListener {
         this.topPanel.add(executeStepButton, BorderLayout.EAST);
         this.topPanel.add(httpServicePanel, BorderLayout.CENTER);
 
-        this.add(topPanel, BorderLayout.NORTH);
-        this.add(reqRespSplitPane, BorderLayout.CENTER);
-        this.setPreferredSize(new Dimension(450, 0));
-        this.setMaximumSize(new Dimension(450, 0));
-        this.setMinimumSize(new Dimension(450, 0));
+        PanelBuilder panelBuilder = new PanelBuilder();
+        panelBuilder.setComponentGrid(new Component[][]{
+                new Component[]{executeStepButton, new JLabel("Target: ", SwingConstants.TRAILING), targetLabel, editTargetButton},
+                new Component[]{reqRespSplitPane, reqRespSplitPane, reqRespSplitPane, reqRespSplitPane},
+        });
+        panelBuilder.setGridWeightsX(new int[][]{
+                new int[]{0, 1, 0, 0},
+                new int[]{0, 0, 0, 0}
+        });
+        panelBuilder.setGridWeightsY(new int[][]{
+                new int[]{0, 0, 0, 0},
+                new int[]{1, 1, 1, 1}
+        });
+        panelBuilder.setAlignment(Alignment.FILL);
+
+        this.add(panelBuilder.build(), BorderLayout.CENTER);
         this.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLoweredBevelBorder(), BorderFactory.createRaisedBevelBorder()));
 
         this.revalidate();
