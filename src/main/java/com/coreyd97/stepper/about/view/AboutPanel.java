@@ -1,6 +1,7 @@
 package com.coreyd97.stepper.about.view;
 
 import com.coreyd97.stepper.Stepper;
+import com.coreyd97.stepper.util.Utils;
 import com.coreyd97.stepper.util.view.NoTextSelectionCaret;
 import com.coreyd97.stepper.util.view.WrappedTextPane;
 
@@ -48,7 +49,7 @@ public class AboutPanel extends JPanel {
 
         JPanel contactPanel = new JPanel(new GridLayout(2,0));
 
-        ImageIcon twitterImage = loadImage("TwitterLogo.png", 30, 30);
+        ImageIcon twitterImage = Utils.loadImage("TwitterLogo.png", 30, 30);
         JButton twitterButton;
         if(twitterImage != null){
             twitterButton = new JButton("Follow me on Twitter", twitterImage);
@@ -68,7 +69,7 @@ public class AboutPanel extends JPanel {
         String githubLogoFilename = "GitHubLogo" +
                 (UIManager.getLookAndFeel().getName().equalsIgnoreCase("darcula") ? "White" : "Black")
                 + ".png";
-        ImageIcon githubImage = loadImage(githubLogoFilename, 30, 30);
+        ImageIcon githubImage = Utils.loadImage(githubLogoFilename, 30, 30);
         JButton viewOnGithubButton;
         if(githubImage != null){
             viewOnGithubButton = new JButton("View Project on GitHub", githubImage);
@@ -221,21 +222,5 @@ public class AboutPanel extends JPanel {
         this.add(new JPanel(), gbc);
         gbc.gridx = 3;
         this.add(new JPanel(), gbc);
-    }
-
-    private ImageIcon loadImage(String filename, int width, int height){
-        ClassLoader cldr = this.getClass().getClassLoader();
-        URL imageURLMain = cldr.getResource(filename);
-
-        if(imageURLMain != null) {
-            Image scaled = new ImageIcon(imageURLMain).getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
-            ImageIcon scaledIcon = new ImageIcon(scaled);
-            BufferedImage bufferedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g = (Graphics2D) bufferedImage.getGraphics();
-            g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g.drawImage(scaledIcon.getImage(), null, null);
-            return new ImageIcon(bufferedImage);
-        }
-        return null;
     }
 }
