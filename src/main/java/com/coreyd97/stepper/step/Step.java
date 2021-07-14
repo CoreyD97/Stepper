@@ -215,6 +215,11 @@ public class Step implements IMessageEditorController {
         isSSL = SSL;
     }
 
+    public String getTargetString(){
+        if(hostname.isEmpty()) return "Not specified";
+        return "http" + (isSSL ? "s" : "") + "://" + hostname + (port != 80 && port != 443 ? ":" + port : "");
+    }
+
     public boolean isValidTarget(){
         if(this.hostname != null && this.port != null && this.isSSL != null){
             try{

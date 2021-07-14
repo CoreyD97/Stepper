@@ -13,6 +13,7 @@ import com.coreyd97.stepper.step.listener.StepExecutionAdapter;
 import com.coreyd97.stepper.util.Utils;
 import com.coreyd97.stepper.variable.StepVariable;
 import com.coreyd97.stepper.variable.listener.StepVariableListener;
+import com.formdev.flatlaf.FlatLaf;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -103,8 +104,8 @@ public class StepPanel extends JPanel implements StepVariableListener {
         this.reqRespSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, requestSplitPane, responseSplitPane);
         this.reqRespSplitPane.setResizeWeight(0.5);
 
-        this.topPanel = new JPanel(new BorderLayout());
         JButton executeStepButton = new JButton("Execute Step");
+        executeStepButton.setMargin(new Insets(7,7,7,7));
         executeStepButton.addActionListener(actionEvent -> {
             new Thread(() -> {
                 executeStepButton.setEnabled(false);
@@ -122,71 +123,83 @@ public class StepPanel extends JPanel implements StepVariableListener {
                 }
             }).start();
         });
-        JPanel httpServicePanel = new JPanel(new GridBagLayout());
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.fill = GridBagConstraints.BOTH;
-        gbc.weightx = 10.0;
-        gbc.gridx = gbc.gridy = 1;
-        httpAddressField = new JTextField();
-        httpAddressField.setText(step.getHostname());
-        httpAddressField.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent documentEvent) {
-                step.setHostname(httpAddressField.getText());
-            }
 
-            @Override
-            public void removeUpdate(DocumentEvent documentEvent) {
-                step.setHostname(httpAddressField.getText());
-            }
+        JButton editTargetButton = new JButton("Edit");
 
+        Runnable setEditButtonIcon = () -> {
+            String editIconURI = FlatLaf.isLafDark() ? "resources/Media/dark/edit.png" : "resources/Media/edit.png";
+            ImageIcon editIcon = Utils.loadImage(editIconURI, 15, 15);
+            editTargetButton.setIcon(editIcon);
+            if(editIcon != null) {
+                editTargetButton.setText(null);
+            }else{
+                editTargetButton.setText("Edit");
+            }
+        };
+        setEditButtonIcon.run();
+        editTargetButton.addPropertyChangeListener("UI", propertyChangeEvent -> setEditButtonIcon.run());
+
+        editTargetButton.addActionListener(new AbstractAction() {
             @Override
-            public void changedUpdate(DocumentEvent documentEvent) {
-                step.setHostname(httpAddressField.getText());
+            public void actionPerformed(ActionEvent e) {
+                showHttpDialog();
             }
         });
-        httpServicePanel.add(httpAddressField, gbc);
-        gbc.gridx++;
-        gbc.weightx = 0;
-        httpPortSpinner = new JSpinner(new SpinnerNumberModel(step.getPort().intValue(),1,65535,1));
-        httpPortSpinner.getModel().addChangeListener(changeEvent -> this.step.setPort((Integer) httpPortSpinner.getValue()));
-        httpPortSpinner.setEditor(new JSpinner.NumberEditor(httpPortSpinner,"#"));
-        httpServicePanel.add(httpPortSpinner, gbc);
-        gbc.gridx++;
-        httpServicePanel.add(Box.createHorizontalStrut(25), gbc);
-        gbc.gridx++;
-        httpServicePanel.add(new JLabel("Is HTTPS"), gbc);
-        gbc.gridx++;
-        httpIsSecure = new JCheckBox();
-        httpIsSecure.setSelected(step.isSSL());
-        httpIsSecure.addChangeListener(changeEvent -> this.step.setSSL(httpIsSecure.isSelected()));
-        httpServicePanel.add(httpIsSecure, gbc);
-        gbc.gridx++;
-        httpServicePanel.add(Box.createHorizontalStrut(25), gbc);
 
-        this.topPanel.add(executeStepButton, BorderLayout.EAST);
-        this.topPanel.add(httpServicePanel, BorderLayout.CENTER);
+        targetLabel = new JLabel(step.getTargetString());
 
+        JSeparator horizontalSeparator = new JSeparator(JSeparator.HORIZONTAL);
         PanelBuilder panelBuilder = new PanelBuilder();
         panelBuilder.setComponentGrid(new Component[][]{
                 new Component[]{executeStepButton, new JLabel("Target: ", SwingConstants.TRAILING), targetLabel, editTargetButton},
+                new Component[]{horizontalSeparator, horizontalSeparator, horizontalSeparator, horizontalSeparator},
                 new Component[]{reqRespSplitPane, reqRespSplitPane, reqRespSplitPane, reqRespSplitPane},
         });
         panelBuilder.setGridWeightsX(new int[][]{
                 new int[]{0, 1, 0, 0},
+                new int[]{0, 0, 0, 0},
                 new int[]{0, 0, 0, 0}
         });
         panelBuilder.setGridWeightsY(new int[][]{
+                new int[]{0, 0, 0, 0},
                 new int[]{0, 0, 0, 0},
                 new int[]{1, 1, 1, 1}
         });
         panelBuilder.setAlignment(Alignment.FILL);
 
-        this.add(panelBuilder.build(), BorderLayout.CENTER);
-        this.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLoweredBevelBorder(), BorderFactory.createRaisedBevelBorder()));
+        JPanel builtPanel = panelBuilder.build();
+        this.add(builtPanel, BorderLayout.CENTER);
 
         this.revalidate();
         this.repaint();
+    }
+
+    private void showHttpDialog(){
+
+        JTextField httpAddressField = new JTextField();
+        httpAddressField.setText(step.getHostname());
+        JSpinner httpPortSpinner = new JSpinner(new SpinnerNumberModel(step.getPort().intValue(),1,65535,1));
+        httpPortSpinner.setEditor(new JSpinner.NumberEditor(httpPortSpinner,"#"));
+        JCheckBox httpIsSecure = new JCheckBox("Is HTTPS?");
+        httpIsSecure.setSelected(step.isSSL());
+        JLabel info = new JLabel("Specify the details of the server to which the request will be sent.");
+
+        PanelBuilder panelBuilder = new PanelBuilder();
+        panelBuilder.setAlignment(Alignment.FILL);
+        panelBuilder.setComponentGrid(new Component[][]{
+                new Component[]{info, info},
+                new Component[]{new JLabel("Host"), httpAddressField},
+                new Component[]{new JLabel("Port"), httpPortSpinner},
+                new Component[]{httpIsSecure, null},
+        });
+
+        int answer = JOptionPane.showConfirmDialog(this, panelBuilder.build(), "HTTP Configuration", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        if(answer == JOptionPane.YES_OPTION){
+            step.setHostname(httpAddressField.getText());
+            step.setPort((Integer) httpPortSpinner.getValue());
+            step.setSSL(httpIsSecure.isSelected());
+            targetLabel.setText(step.getTargetString());
+        }
     }
 
     public IMessageEditor getRequestEditor() {
