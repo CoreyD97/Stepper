@@ -88,16 +88,18 @@ public class SequenceContainer extends JPanel {
                     int fromIndex = tabbedContainer.indexOfTabComponent(tabComponent);
                     Component tabBody = tabbedContainer.getComponentAt(fromIndex);
                     for(int i=1; i<tabbedContainer.getTabCount()-1; i++){ //Start at 1, globals is 0. Stop -1 for "add step" tab
-                        final int toIndex = i;
                         if(i != fromIndex){
                             JMenuItem moveTo = new JMenuItem("Index: " + i);
+                            int finalI = i;
                             moveTo.addActionListener(new ActionListener() {
                                 @Override
                                 public void actionPerformed(ActionEvent actionEvent) {
-                                    tabbedContainer.insertTab(null, null, tabBody, null, toIndex);
+                                    int toIndex = finalI;
+                                    stepSequence.moveStep(fromIndex - 1, toIndex-1); //Take 1, since globals tab is first
+                                    tabbedContainer.removeTabAt(fromIndex); //Remove existing tab
+                                    tabbedContainer.insertTab("null", null, tabBody, null, toIndex);
                                     tabbedContainer.setTabComponentAt(toIndex, tabComponent);
                                     tabbedContainer.setSelectedIndex(toIndex);
-                                    stepSequence.moveStep(fromIndex - 1, toIndex-1); //Take 1, since globals tab is first
                                     updateTabIndices();
                                 }
                             });
