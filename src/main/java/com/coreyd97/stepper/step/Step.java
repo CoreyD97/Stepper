@@ -41,7 +41,7 @@ public class Step implements IMessageEditorController {
         this.executionListeners = new ArrayList<>();
         this.requestBody = new byte[0];
         this.responseBody = new byte[0];
-        this.hostname = "HOSTNAME";
+        this.hostname = "";
         this.port = 443;
         this.isSSL = true;
     }
