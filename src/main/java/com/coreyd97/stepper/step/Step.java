@@ -1,9 +1,6 @@
 package com.coreyd97.stepper.step;
 
-import burp.IHttpRequestResponse;
-import burp.IHttpService;
-import burp.IMessageEditor;
-import burp.IMessageEditorController;
+import burp.*;
 import com.coreyd97.stepper.Globals;
 import com.coreyd97.stepper.MessageProcessor;
 import com.coreyd97.stepper.Stepper;
@@ -12,7 +9,6 @@ import com.coreyd97.stepper.exception.SequenceExecutionException;
 import com.coreyd97.stepper.sequence.StepSequence;
 import com.coreyd97.stepper.step.listener.StepExecutionListener;
 import com.coreyd97.stepper.variable.StepVariable;
-import com.coreyd97.stepper.variable.VariableManager;
 
 import javax.swing.*;
 import java.util.*;
@@ -120,26 +116,28 @@ public class Step implements IMessageEditorController {
         }
 
         if(MessageProcessor.hasStepVariable(requestWithoutReplacements)) {
-            if(MessageProcessor.isUnprocessable(requestWithoutReplacements)){
-                //If there's unicode issues, we're likely acting on binary data. Warn the user.
-                //TODO STEP SEQUENCE HANDLE BINARY ERRORS.
-                int result = JOptionPane.showConfirmDialog(Stepper.getInstance().getUI().getUiComponent(),
-                        "The request contains non UTF characters.\nStepper is able to make the replacements, " +
-                                "but some of the binary data may be lost. Continue?",
-                        "Stepper Replacement Error", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-                if(result == JOptionPane.NO_OPTION) throw new SequenceCancelledException("Binary data, user cancelled.");
-            }
+//            if(MessageProcessor.isUnprocessable(requestWithoutReplacements)){
+//                //If there's unicode issues, we're likely acting on binary data. Warn the user.
+//                //TODO STEP SEQUENCE HANDLE BINARY ERRORS.
+//                int result = JOptionPane.showConfirmDialog(Stepper.getInstance().getUI().getUiComponent(),
+//                        "The request contains non UTF characters.\nStepper is able to make the replacements, " +
+//                                "but some of the binary data may be lost. Continue?",
+//                        "Stepper Replacement Error", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+//                if(result == JOptionPane.NO_OPTION) throw new SequenceCancelledException("Binary data, user cancelled.");
+//            }
             builtRequest = MessageProcessor.makeReplacementsForSingleSequence(requestWithoutReplacements, replacements);
-
-            if(Stepper.getPreferences().getSetting(Globals.PREF_UPDATE_REQUEST_LENGTH)){
-                builtRequest = MessageProcessor.updateContentLength(builtRequest);
-            }
-
         }else{
             builtRequest = Arrays.copyOf(requestWithoutReplacements, requestWithoutReplacements.length);
         }
 
-        //TODO Update the displayed request with the content-length header which was sent to the server.
+        if(Stepper.getPreferences().getSetting(Globals.PREF_UPDATE_REQUEST_LENGTH)){
+            builtRequest = MessageProcessor.updateContentLength(builtRequest);
+
+            //TODO Find a way to reliably replace content-length of templated request.
+            byte[] fixedContentLengthTemplate = MessageProcessor.updateContentLength(requestWithoutReplacements);
+            //setRequestBody();
+        }
+
         setResponseBody(new byte[0]);
 
         //Update the httpService

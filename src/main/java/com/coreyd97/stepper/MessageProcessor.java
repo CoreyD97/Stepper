@@ -4,9 +4,14 @@ import burp.*;
 import com.coreyd97.BurpExtenderUtilities.Preferences;
 import com.coreyd97.stepper.sequence.StepSequence;
 import com.coreyd97.stepper.sequencemanager.SequenceManager;
+import com.coreyd97.stepper.util.ReplacingInputStream;
 import com.coreyd97.stepper.variable.StepVariable;
 
 import javax.swing.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -114,79 +119,118 @@ public class MessageProcessor implements IHttpListener {
      * Used to make replacements with variables from this sequence only.
      * Used for steps within a sequence.
      * @param originalContent
-     * @param replacements
+     * @param variables
      * @return
      */
-    public static byte[] makeReplacementsForSingleSequence(byte[] originalContent, List<StepVariable> replacements) {
+    public static byte[] makeReplacementsForSingleSequence(byte[] originalContent, List<StepVariable> variables) {
         byte[] request = Arrays.copyOf(originalContent, originalContent.length);
-        boolean hasReplaced = false;
+//        boolean hasReplaced = false;
+//
+//        String requestString = new String(request);
+//
+//        for (StepVariable replacement : replacements) {
+//            //Find identifier in requestBody and replace with latest value.
+//            Matcher m = StepVariable.createIdentifierPattern(replacement).matcher(requestString);
+//            hasReplaced |= m.find();
+//
+//            String replacementValue = replacement.getValue() == null ? "" : replacement.getValue();
+//            requestString = m.replaceAll(replacementValue);
+//        }
+//
+//        request = requestString.getBytes();
+//
+//        if(hasReplaced) {
+//            return request;
+//        }else{
+//            return originalContent;
+//        }
 
-        String requestString = new String(request);
-
-        for (StepVariable replacement : replacements) {
-            //Find identifier in requestBody and replace with latest value.
-            Matcher m = StepVariable.createIdentifierPattern(replacement).matcher(requestString);
-            hasReplaced |= m.find();
-
-            String replacementValue = replacement.getValue() == null ? "" : replacement.getValue();
-            requestString = m.replaceAll(replacementValue);
+        List<ReplacingInputStream.Replacement> replacements = new ArrayList<>();
+        for (StepVariable variable : variables) {
+            String match = StepVariable.createVariableString(variable.getIdentifier());
+            String replace = variable.getValue();
+            ReplacingInputStream.Replacement replacement = new ReplacingInputStream.Replacement(match.getBytes(StandardCharsets.UTF_8), replace.getBytes(StandardCharsets.UTF_8));
+            replacements.add(replacement);
         }
+        ReplacingInputStream inputStream = new ReplacingInputStream(new ByteArrayInputStream(request), replacements);
 
-        request = requestString.getBytes();
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        int b;
+        try {
+            while (-1 != (b = inputStream.read())) {
+                bos.write(b);
+            }
+        }catch (IOException e){ /**TODO**/ }
 
-        if(hasReplaced) {
-            return request;
-        }else{
-            return originalContent;
-        }
+        return bos.toByteArray();
     }
 
     /**
      * Used to make replacements with variables from multiple sequences
      * Used when variables have been used in tools other than stepper.
      * @param originalContent
-     * @param replacements
+     * @param sequenceVariableMap
      * @return
      */
     public static byte[] makeReplacementsForAllSequences(byte[] originalContent,
-                                                         HashMap<StepSequence, List<StepVariable>> replacements) {
+                                                         HashMap<StepSequence, List<StepVariable>> sequenceVariableMap) {
         byte[] request = Arrays.copyOf(originalContent, originalContent.length);
-        boolean hasReplaced = false;
+//        boolean hasReplaced = false;
+//
+//        String requestString = new String(request);
+//
+//        for (Map.Entry<StepSequence, List<StepVariable>> sequenceEntry : replacements.entrySet()) {
+//            StepSequence sequence = sequenceEntry.getKey();
+//            List<StepVariable> variables = sequenceEntry.getValue();
+//
+//            for (StepVariable replacement : variables) {
+//                //Find identifier in requestBody and replace with latest value.
+//                Matcher m = StepVariable.createIdentifierPatternWithSequence(sequence, replacement).matcher(requestString);
+//                hasReplaced |= m.find();
+//
+//                String replacementValue = replacement.getValue() == null ? "" : replacement.getValue();
+//                requestString = m.replaceAll(replacementValue);
+//            }
+//        }
+//
+//        request = requestString.getBytes();
+//
+//        if(hasReplaced) {
+//            return request;
+//        }else{
+//            return originalContent;
+//        }
 
-        String requestString = new String(request);
-
-        for (Map.Entry<StepSequence, List<StepVariable>> sequenceEntry : replacements.entrySet()) {
+        List<ReplacingInputStream.Replacement> replacements = new ArrayList<>();
+        for (Map.Entry<StepSequence, List<StepVariable>> sequenceEntry : sequenceVariableMap.entrySet()) {
             StepSequence sequence = sequenceEntry.getKey();
             List<StepVariable> variables = sequenceEntry.getValue();
-
-            for (StepVariable replacement : variables) {
-                //Find identifier in requestBody and replace with latest value.
-                Matcher m = StepVariable.createIdentifierPatternWithSequence(sequence, replacement).matcher(requestString);
-                hasReplaced |= m.find();
-
-                String replacementValue = replacement.getValue() == null ? "" : replacement.getValue();
-                requestString = m.replaceAll(replacementValue);
+            for (StepVariable variable : variables) {
+                String match = StepVariable.createVariableString(sequence.getTitle(), variable.getIdentifier());
+                String replace = variable.getValue();
+                ReplacingInputStream.Replacement replacement = new ReplacingInputStream.Replacement(match.getBytes(StandardCharsets.UTF_8), replace.getBytes(StandardCharsets.UTF_8));
+                replacements.add(replacement);
             }
         }
+        ReplacingInputStream inputStream = new ReplacingInputStream(new ByteArrayInputStream(request), replacements);
 
-        request = requestString.getBytes();
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        int b;
+        try {
+            while (-1 != (b = inputStream.read())) {
+                bos.write(b);
+            }
+        }catch (IOException e){ /**TODO**/ }
 
-        if(hasReplaced) {
-            return request;
-        }else{
-            return originalContent;
-        }
+        return bos.toByteArray();
     }
 
     public static byte[] updateContentLength(byte[] request){
-        IRequestInfo newRequestInfo = Stepper.callbacks.getHelpers().analyzeRequest(request);
-        List<String> newRequestHeaders = newRequestInfo.getHeaders();
-        int contentLength = request.length - newRequestInfo.getBodyOffset();
-        newRequestHeaders.removeIf(header -> header.startsWith("Content-Length:"));
-        newRequestHeaders.add("Content-Length: " + contentLength);
+        IRequestInfo requestInfo = Stepper.callbacks.getHelpers().analyzeRequest(request);
+        List<String> newRequestHeaders = requestInfo.getHeaders();
+        byte[] newBody = Arrays.copyOfRange(request, requestInfo.getBodyOffset(), request.length);
 
-        byte[] newBody = Arrays.copyOfRange(request, newRequestInfo.getBodyOffset(), request.length);
-
+        //The method below automatically updates content-length.
         return Stepper.callbacks.getHelpers().buildHttpMessage(newRequestHeaders, newBody);
     }
 
