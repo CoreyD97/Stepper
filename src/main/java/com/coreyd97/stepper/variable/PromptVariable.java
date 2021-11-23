@@ -38,7 +38,7 @@ public class PromptVariable extends PreExecutionStepVariable {
     public void updateVariableBeforeExecution() {
         String newValue = JOptionPane.showInputDialog(Stepper.getUI().getUiComponent(), "Enter value for variable \"" + this.identifier + "\": ",
                 "Variable Value", JOptionPane.INFORMATION_MESSAGE);
-        this.value = newValue;
+        this.value = newValue == null ? "" : newValue;
         notifyChanges();
     }
 }

@@ -21,7 +21,9 @@ public class MessageProcessor implements IHttpListener {
     private final SequenceManager sequenceManager;
     private final Preferences preferences;
     public static final String EXECUTE_BEFORE_REGEX = "X-Stepper-Execute-Before:(.*)";
+    public static final String EXECUTE_AFTER_REGEX = "X-Stepper-Execute-After:(.*)";
     public static final Pattern EXECUTE_BEFORE_PATTERN = Pattern.compile(EXECUTE_BEFORE_REGEX, Pattern.CASE_INSENSITIVE);
+    public static final Pattern EXECUTE_AFTER_PATTERN = Pattern.compile(EXECUTE_AFTER_REGEX, Pattern.CASE_INSENSITIVE);
     public static final String STEPPER_IGNORE_HEADER = "X-Stepper-Ignore";
     public static final Pattern STEPPER_IGNORE_PATTERN = Pattern.compile(STEPPER_IGNORE_HEADER, Pattern.CASE_INSENSITIVE);
 
@@ -51,44 +53,49 @@ public class MessageProcessor implements IHttpListener {
             return;
         }
 
-        if(isValidTool(toolFlag) && messageIsRequest){
+        if(isValidTool(toolFlag)){
 
-            byte[] request = messageInfo.getRequest();
-            List<StepSequence> postExecSequences = extractPostExecSequencesFromRequest(requestInfo);
-            if(postExecSequences.size() > 0){
-                //Remove the headers from the request
-                request = removeHeaderMatchingPattern(request, EXECUTE_BEFORE_PATTERN);
+            if(messageIsRequest){
+                byte[] request = messageInfo.getRequest();
+                System.out.println("Request: " + messageInfo.getRequest());
+                List<StepSequence> preExecSequences = extractPreExecSequencesFromRequest(requestInfo);
+                if(preExecSequences.size() > 0){
+                    //Remove the headers from the request
+                    request = removeHeaderMatchingPattern(request, EXECUTE_BEFORE_PATTERN);
 
-                //Execute the sequences
-                for (StepSequence sequence : postExecSequences) {
-                    sequence.executeBlocking();
-                }
-            }
-
-
-            HashMap<StepSequence, List<StepVariable>> allVariables = sequenceManager.getRollingVariablesFromAllSequences();
-
-            if(allVariables.size() > 0 && hasStepVariable(request)) {
-
-                if(isUnprocessable(messageInfo.getRequest())){
-                    //If there's unicode issues, we're likely acting on binary data. Warn the user.
-                    int result = JOptionPane.showConfirmDialog(Stepper.getUI().getUiComponent(),
-                            "The request contains non UTF characters.\nStepper is able to make the replacements, " +
-                                    "but some of the binary data may be lost. Continue?",
-                            "Stepper Replacement Error", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-                    if(result == JOptionPane.NO_OPTION) return;
+                    //Execute the sequences
+                    for (StepSequence sequence : preExecSequences) {
+                        sequence.executeBlocking();
+                    }
                 }
 
-                try {
-                    byte[] newRequest = makeReplacementsForAllSequences(request, allVariables);
 
-                    if(preferences.getSetting(Globals.PREF_UPDATE_REQUEST_LENGTH)){
-                        newRequest = updateContentLength(newRequest);
+                HashMap<StepSequence, List<StepVariable>> allVariables = sequenceManager.getRollingVariablesFromAllSequences();
+
+                if(allVariables.size() > 0 && hasStepVariable(request)) {
+
+                    if(isUnprocessable(messageInfo.getRequest())){
+                        //If there's unicode issues, we're likely acting on binary data. Warn the user.
+                        int result = JOptionPane.showConfirmDialog(Stepper.getUI().getUiComponent(),
+                                "The request contains non UTF characters.\nStepper is able to make the replacements, " +
+                                        "but some of the binary data may be lost. Continue?",
+                                "Stepper Replacement Error", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+                        if(result == JOptionPane.NO_OPTION) return;
                     }
 
-                    messageInfo.setRequest(newRequest);
-                    
-                } catch (UnsupportedOperationException e) { /**Read-only message**/ }
+                    try {
+                        byte[] newRequest = makeReplacementsForAllSequences(request, allVariables);
+
+                        if(preferences.getSetting(Globals.PREF_UPDATE_REQUEST_LENGTH)){
+                            newRequest = updateContentLength(newRequest);
+                        }
+
+                        messageInfo.setRequest(newRequest);
+
+                    } catch (UnsupportedOperationException e) { /**Read-only message**/ }
+                }
+            }else{
+
             }
         }
     }
@@ -124,26 +131,6 @@ public class MessageProcessor implements IHttpListener {
      */
     public static byte[] makeReplacementsForSingleSequence(byte[] originalContent, List<StepVariable> variables) {
         byte[] request = Arrays.copyOf(originalContent, originalContent.length);
-//        boolean hasReplaced = false;
-//
-//        String requestString = new String(request);
-//
-//        for (StepVariable replacement : replacements) {
-//            //Find identifier in requestBody and replace with latest value.
-//            Matcher m = StepVariable.createIdentifierPattern(replacement).matcher(requestString);
-//            hasReplaced |= m.find();
-//
-//            String replacementValue = replacement.getValue() == null ? "" : replacement.getValue();
-//            requestString = m.replaceAll(replacementValue);
-//        }
-//
-//        request = requestString.getBytes();
-//
-//        if(hasReplaced) {
-//            return request;
-//        }else{
-//            return originalContent;
-//        }
 
         List<ReplacingInputStream.Replacement> replacements = new ArrayList<>();
         for (StepVariable variable : variables) {
@@ -175,31 +162,6 @@ public class MessageProcessor implements IHttpListener {
     public static byte[] makeReplacementsForAllSequences(byte[] originalContent,
                                                          HashMap<StepSequence, List<StepVariable>> sequenceVariableMap) {
         byte[] request = Arrays.copyOf(originalContent, originalContent.length);
-//        boolean hasReplaced = false;
-//
-//        String requestString = new String(request);
-//
-//        for (Map.Entry<StepSequence, List<StepVariable>> sequenceEntry : replacements.entrySet()) {
-//            StepSequence sequence = sequenceEntry.getKey();
-//            List<StepVariable> variables = sequenceEntry.getValue();
-//
-//            for (StepVariable replacement : variables) {
-//                //Find identifier in requestBody and replace with latest value.
-//                Matcher m = StepVariable.createIdentifierPatternWithSequence(sequence, replacement).matcher(requestString);
-//                hasReplaced |= m.find();
-//
-//                String replacementValue = replacement.getValue() == null ? "" : replacement.getValue();
-//                requestString = m.replaceAll(replacementValue);
-//            }
-//        }
-//
-//        request = requestString.getBytes();
-//
-//        if(hasReplaced) {
-//            return request;
-//        }else{
-//            return originalContent;
-//        }
 
         List<ReplacingInputStream.Replacement> replacements = new ArrayList<>();
         for (Map.Entry<StepSequence, List<StepVariable>> sequenceEntry : sequenceVariableMap.entrySet()) {
@@ -239,7 +201,7 @@ public class MessageProcessor implements IHttpListener {
      * @param requestInfo
      * @return Optional value of step sequence to execute before the request.
      */
-    public List<StepSequence> extractPostExecSequencesFromRequest(IRequestInfo requestInfo){
+    public List<StepSequence> extractPreExecSequencesFromRequest(IRequestInfo requestInfo){
         //Check if headers ask us to execute a request before the request.
         List<String> requestHeaders = requestInfo.getHeaders();
         ArrayList<StepSequence> postExecSequences = new ArrayList<>();
@@ -248,12 +210,14 @@ public class MessageProcessor implements IHttpListener {
             String header = iterator.next();
             Matcher m = MessageProcessor.EXECUTE_BEFORE_PATTERN.matcher(header);
             if (m.matches()) {
-                Optional<StepSequence> postExecSequence = sequenceManager.getSequences().stream()
+                Optional<StepSequence> preExecSequence = sequenceManager.getSequences().stream()
                         .filter(sequence -> sequence.getTitle().equalsIgnoreCase(m.group(1).trim()))
                         .findFirst();
 
-                if(postExecSequence.isPresent())
-                    postExecSequences.add(postExecSequence.get());
+                if(preExecSequence.isPresent())
+                    postExecSequences.add(preExecSequence.get());
+                else
+                    JOptionPane.showMessageDialog(Stepper.getUI().getUiComponent(), "Could not find pre-execution sequence named: \"" + m.group(1).trim() + "\".");
             }
         }
         return postExecSequences;
