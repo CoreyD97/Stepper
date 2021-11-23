@@ -70,9 +70,12 @@ public class SequenceContainer extends JPanel {
         Consumer<String> onTitleChanged = step::setTitle;
 
         Consumer<Void> onRemoveClicked = (nothing) -> {
-            this.stepSequence.removeStep(step);
-            //Update indices for other tabs
-            updateTabIndices();
+            int result = JOptionPane.showConfirmDialog(tabbedContainer, "Are you sure you want to remove this step? (" + step.getTitle() + ")", "Remove Step", JOptionPane.YES_NO_OPTION);
+            if(result == JOptionPane.YES_OPTION) {
+                this.stepSequence.removeStep(step);
+                //Update indices for other tabs
+                updateTabIndices();
+            }
         };
 
         CustomTabComponent tabComponent = new CustomTabComponent(tabNumber,

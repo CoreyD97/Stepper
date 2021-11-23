@@ -77,7 +77,12 @@ public class StepperUI implements ITab {
 
         Consumer<String> onTitleChange = sequence::setTitle;
 
-        Consumer<Void> onRemoveClicked = aVoid -> this.sequenceManager.removeStepSequence(sequence);
+        Consumer<Void> onRemoveClicked = aVoid -> {
+            int result = JOptionPane.showConfirmDialog(tabbedPane, "Are you sure you want to remove this sequence? (" + sequence.getTitle() + ")", "Remove Sequence", JOptionPane.YES_NO_OPTION);
+            if(result == JOptionPane.YES_OPTION) {
+                this.sequenceManager.removeStepSequence(sequence);
+            }
+        };
 
         CustomTabComponent tabComponent = new CustomTabComponent( newTabLocation-1,
                 sequence.getTitle(), false,
