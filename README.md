@@ -26,7 +26,7 @@
 
 **Building:**
 1. Clone the repo
-2. Use gradle to build the jar: `gradle jar`
+2. Use gradle to build the jar: `gradlew jar`
 3. Add the built jar (`./releases/Stepper.jar`) to Burp Suite 
 
 **Usage:**
