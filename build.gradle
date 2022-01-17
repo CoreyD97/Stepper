@@ -10,7 +10,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'net.portswigger.burp.extender:burp-extender-api:1.7.22'
+    compileOnly 'net.portswigger.burp.extender:burp-extender-api:1.7.22'
     implementation 'com.github.CoreyD97:BurpExtenderUtilities:cd2b86250'
     compileOnly 'com.formdev:flatlaf:1.1.2'
     testRuntimeOnly files('/home/corey/BurpSuitePro/burpsuite_pro.jar')
@@ -18,7 +18,7 @@ dependencies {
 
 jar {
     baseName = project.name
-    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
 }
 
 configurations.all {
