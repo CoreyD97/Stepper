@@ -86,6 +86,9 @@ public class StepSequence
                 } catch (SequenceExecutionException e) {
                     JOptionPane.showMessageDialog(Stepper.getUI().getUiComponent(), e.getMessage(),
                             "Sequence Stopped", JOptionPane.ERROR_MESSAGE);
+                }catch (Exception e){
+                    JOptionPane.showMessageDialog(Stepper.getUI().getUiComponent(), e.getMessage(),
+                            "Sequence Failed", JOptionPane.ERROR_MESSAGE);
                 }
                 for (SequenceExecutionListener stepLExecutionistener : sequenceExecutionListeners) {
                     stepLExecutionistener.afterSequenceEnd(sequenceSuccess);

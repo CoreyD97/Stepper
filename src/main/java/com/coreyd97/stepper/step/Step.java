@@ -150,7 +150,13 @@ public class Step implements IMessageEditorController {
 
         long start = new Date().getTime();
         //Update with response
-        IHttpRequestResponse requestResponse = Stepper.callbacks.makeHttpRequest(this.getHttpService(), builtRequest);
+        IHttpRequestResponse requestResponse = null;
+        try {
+            requestResponse = Stepper.callbacks.makeHttpRequest(this.getHttpService(), builtRequest);
+        }catch (RuntimeException e){
+            if(e.getMessage().isEmpty() || e.getMessage().equalsIgnoreCase(this.hostname))
+                throw new RuntimeException(String.format("Failed to execute step \"%s\"", this.title));
+        }
         long end = new Date().getTime();
         if(requestResponse.getResponse() == null)
             throw new SequenceExecutionException("The request to the server timed out.");
