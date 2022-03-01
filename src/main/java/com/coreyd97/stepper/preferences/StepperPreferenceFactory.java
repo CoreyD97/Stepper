@@ -53,7 +53,7 @@ public class StepperPreferenceFactory extends PreferenceFactory {
     @Override
     protected void registerSettings() {
         prefs.registerSetting(Globals.PREF_STEP_SEQUENCES, new TypeToken<ArrayList<StepSequence>>(){}.getType(), Preferences.Visibility.PROJECT);
-        prefs.registerSetting(Globals.PREF_PREV_VERSION, Double.class, Globals.VERSION, Preferences.Visibility.GLOBAL);
+        prefs.registerSetting(Globals.PREF_PREV_VERSION, String.class, Globals.VERSION, Preferences.Visibility.GLOBAL);
         prefs.registerSetting(Globals.PREF_VARS_IN_ALL_TOOLS, Boolean.class, true, Preferences.Visibility.GLOBAL);
         prefs.registerSetting(Globals.PREF_VARS_IN_EXTENDER, Boolean.class, true, Preferences.Visibility.GLOBAL);
         prefs.registerSetting(Globals.PREF_VARS_IN_SEQUENCER, Boolean.class, true, Preferences.Visibility.GLOBAL);
