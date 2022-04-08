@@ -84,18 +84,16 @@ public class MessageProcessor implements IHttpListener {
                     }
 
                     try {
-                        byte[] newRequest = makeReplacementsForAllSequences(request, allVariables);
+                        request = makeReplacementsForAllSequences(request, allVariables);
 
                         if(preferences.getSetting(Globals.PREF_UPDATE_REQUEST_LENGTH)){
-                            newRequest = updateContentLength(newRequest);
+                            request = updateContentLength(request);
                         }
-
-                        messageInfo.setRequest(newRequest);
-
                     } catch (UnsupportedOperationException e) { /**Read-only message**/ }
                 }
-            }else{
 
+                //Save any changes made to the request.
+                messageInfo.setRequest(request);
             }
         }
     }
