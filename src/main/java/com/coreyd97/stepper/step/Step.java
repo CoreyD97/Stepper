@@ -126,6 +126,8 @@ public class Step implements IMessageEditorController {
 //                if(result == JOptionPane.NO_OPTION) throw new SequenceCancelledException("Binary data, user cancelled.");
 //            }
             builtRequest = MessageProcessor.makeReplacementsForSingleSequence(requestWithoutReplacements, replacements);
+            HashMap<StepSequence, List<StepVariable>> allVariables = Stepper.instance.getSequenceManager().getRollingVariablesFromAllSequences();
+            builtRequest = MessageProcessor.makeReplacementsForAllSequences(builtRequest, allVariables);
         }else{
             builtRequest = Arrays.copyOf(requestWithoutReplacements, requestWithoutReplacements.length);
         }

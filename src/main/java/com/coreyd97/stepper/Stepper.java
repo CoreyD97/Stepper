@@ -18,10 +18,10 @@ public class Stepper implements IBurpExtender {
     public static IBurpExtenderCallbacks callbacks;
     public static IGsonProvider gsonProvider = new DefaultGsonProvider();
     private static Preferences preferences;
+    private static SequenceManager sequenceManager;
 
     private StateManager stateManager;
     private MessageProcessor messageProcessor;
-    private SequenceManager sequenceManager;
 
     public Stepper(){
         Stepper.instance = this;
@@ -38,6 +38,10 @@ public class Stepper implements IBurpExtender {
 
     public static Stepper getInstance() {
         return instance;
+    }
+
+    public static SequenceManager getSequenceManager(){
+        return sequenceManager;
     }
 
     @Override
