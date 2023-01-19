@@ -20,12 +20,15 @@ public class MessageProcessor implements IHttpListener {
 
     private final SequenceManager sequenceManager;
     private final Preferences preferences;
-    public static final String EXECUTE_BEFORE_REGEX = "X-Stepper-Execute-Before:(.*)";
-    public static final String EXECUTE_AFTER_REGEX = "X-Stepper-Execute-After:(.*)";
-    public static final Pattern EXECUTE_BEFORE_PATTERN = Pattern.compile(EXECUTE_BEFORE_REGEX, Pattern.CASE_INSENSITIVE);
-    public static final Pattern EXECUTE_AFTER_PATTERN = Pattern.compile(EXECUTE_AFTER_REGEX, Pattern.CASE_INSENSITIVE);
+    public static final String EXECUTE_BEFORE_HEADER = "X-Stepper-Execute-Before";
+    public static final String EXECUTE_AFTER_HEADER = "X-Stepper-Execute-After";
+    public static final String EXECUTE_BEFORE_REGEX = EXECUTE_BEFORE_HEADER + ":(.*)";
+    public static final String EXECUTE_AFTER_REGEX = EXECUTE_AFTER_HEADER+":(.*)";
+    public static final String EXECUTE_AFTER_COMMENT_DELIMITER = "#%~%#";
+    public static final Pattern EXECUTE_BEFORE_HEADER_PATTERN = Pattern.compile("^" + EXECUTE_BEFORE_REGEX + "$", Pattern.CASE_INSENSITIVE);
+    public static final Pattern EXECUTE_AFTER_HEADER_PATTERN = Pattern.compile("^" + EXECUTE_AFTER_REGEX + "$", Pattern.CASE_INSENSITIVE);
     public static final String STEPPER_IGNORE_HEADER = "X-Stepper-Ignore";
-    public static final Pattern STEPPER_IGNORE_PATTERN = Pattern.compile(STEPPER_IGNORE_HEADER, Pattern.CASE_INSENSITIVE);
+    public static final Pattern STEPPER_IGNORE_PATTERN = Pattern.compile("^"+STEPPER_IGNORE_HEADER, Pattern.CASE_INSENSITIVE);
 
     public MessageProcessor(SequenceManager sequenceManager, Preferences preferences){
         this.sequenceManager = sequenceManager;
@@ -58,14 +61,31 @@ public class MessageProcessor implements IHttpListener {
             if(messageIsRequest){
                 byte[] request = messageInfo.getRequest();
                 System.out.println("Request: " + messageInfo.getRequest());
-                List<StepSequence> preExecSequences = extractPreExecSequencesFromRequest(requestInfo);
+                List<StepSequence> preExecSequences = extractExecSequencesFromRequest(requestInfo, EXECUTE_BEFORE_HEADER_PATTERN);
                 if(preExecSequences.size() > 0){
                     //Remove the headers from the request
-                    request = removeHeaderMatchingPattern(request, EXECUTE_BEFORE_PATTERN);
+                    request = removeHeaderMatchingPattern(request, EXECUTE_BEFORE_HEADER_PATTERN);
 
                     //Execute the sequences
                     for (StepSequence sequence : preExecSequences) {
                         sequence.executeBlocking();
+                    }
+                }
+
+                List<StepSequence> postExecSequences = extractExecSequencesFromRequest(requestInfo, EXECUTE_AFTER_HEADER_PATTERN);
+
+                if(postExecSequences.size() > 0){
+                    //Remove the headers from the request
+                    request = removeHeaderMatchingPattern(request, EXECUTE_AFTER_HEADER_PATTERN);
+
+                    //Joining the sequences as string to set them as a comment to catch them in the response
+                    String postExecSequencesJoined = EXECUTE_AFTER_HEADER + ":";
+                    for (StepSequence sequence : preExecSequences) {
+                        postExecSequencesJoined += sequence.getTitle() + EXECUTE_AFTER_COMMENT_DELIMITER;
+                    }
+
+                    if(!postExecSequencesJoined.isEmpty()){
+                        messageInfo.setComment(messageInfo.getComment() + postExecSequencesJoined);
                     }
                 }
 
@@ -94,6 +114,17 @@ public class MessageProcessor implements IHttpListener {
 
                 //Save any changes made to the request.
                 messageInfo.setRequest(request);
+            }else{
+                // this is a response so we check for the comments
+                List<StepSequence> postExecSequences = extractExecSequencesFromComment(messageInfo.getComment(), EXECUTE_AFTER_HEADER_PATTERN);
+                if(postExecSequences.size() > 0){
+                    //Execute the sequences
+                    for (StepSequence sequence : postExecSequences) {
+                        sequence.executeBlocking();
+                    }
+                    // remove the added comment from the request
+                    messageInfo.setComment(messageInfo.getComment().replaceAll(EXECUTE_AFTER_REGEX+EXECUTE_AFTER_COMMENT_DELIMITER,""));
+                }
             }
         }
     }
@@ -195,30 +226,59 @@ public class MessageProcessor implements IHttpListener {
     }
 
     /**
-     * Locates the X-Stepper-Execute-Before header and returns the matching sequence.
+     * Locates the X-Stepper-Execute-Before or X-Stepper-Execute-After headers and returns the matching sequences.
      * @param requestInfo
-     * @return Optional value of step sequence to execute before the request.
+     * @param pattern
+     * @return Optional value of step sequence to execute before or after the request.
      */
-    public List<StepSequence> extractPreExecSequencesFromRequest(IRequestInfo requestInfo){
+    public List<StepSequence> extractExecSequencesFromRequest(IRequestInfo requestInfo, Pattern pattern){
         //Check if headers ask us to execute a request before the request.
         List<String> requestHeaders = requestInfo.getHeaders();
-        ArrayList<StepSequence> postExecSequences = new ArrayList<>();
+        ArrayList<StepSequence> execSequences = new ArrayList<>();
 
         for (Iterator<String> iterator = requestHeaders.iterator(); iterator.hasNext(); ) {
             String header = iterator.next();
-            Matcher m = MessageProcessor.EXECUTE_BEFORE_PATTERN.matcher(header);
+            Matcher m = pattern.matcher(header);
             if (m.matches()) {
-                Optional<StepSequence> preExecSequence = sequenceManager.getSequences().stream()
+                Optional<StepSequence> execSequence = sequenceManager.getSequences().stream()
                         .filter(sequence -> sequence.getTitle().equalsIgnoreCase(m.group(1).trim()))
                         .findFirst();
 
-                if(preExecSequence.isPresent())
-                    postExecSequences.add(preExecSequence.get());
+                if(execSequence.isPresent())
+                    execSequences.add(execSequence.get());
                 else
-                    JOptionPane.showMessageDialog(Stepper.getUI().getUiComponent(), "Could not find pre-execution sequence named: \"" + m.group(1).trim() + "\".");
+                    JOptionPane.showMessageDialog(Stepper.getUI().getUiComponent(), "Could not find execution sequence named: \"" + m.group(1).trim() + "\".");
             }
         }
-        return postExecSequences;
+        return execSequences;
+    }
+
+    /**
+     * Locates the X-Stepper-Execute-After pattern in the comment and returns the matching sequences.
+     * @param comment
+     * @param pattern
+     * @return Optional value of step sequence to execute after the request.
+     */
+    public List<StepSequence> extractExecSequencesFromComment(String comment, Pattern pattern){
+        ArrayList<StepSequence> execSequences = new ArrayList<>();
+        Matcher m = pattern.matcher(comment);
+        if (m.find()) {
+            String[] allSequences = m.group(1).split(EXECUTE_AFTER_COMMENT_DELIMITER);
+            for(String sequenceName : allSequences){
+                if(sequenceName != null && !sequenceName.isEmpty()){
+                    Optional<StepSequence> execSequence = sequenceManager.getSequences().stream()
+                            .filter(sequence -> sequence.getTitle().equalsIgnoreCase(sequenceName.trim()))
+                            .findFirst();
+
+                    if(execSequence.isPresent())
+                        execSequences.add(execSequence.get());
+                    else
+                        JOptionPane.showMessageDialog(Stepper.getUI().getUiComponent(), "Could not find execution sequence named: \"" + m.group(1).trim() + "\".");
+                }
+            }
+        }
+
+        return execSequences;
     }
 
     public static boolean hasHeaderMatchingPattern(IRequestInfo requestInfo, Pattern pattern){

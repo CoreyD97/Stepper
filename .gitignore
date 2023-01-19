@@ -6,3 +6,6 @@ out/
 releases/
 *.json
 *.iml
+gradle-app.setting
+.gradletasknamecache
+.git
