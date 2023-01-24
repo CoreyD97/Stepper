@@ -10,15 +10,22 @@ repositories {
 }
 
 dependencies {
-    implementation 'net.portswigger.burp.extender:burp-extender-api:1.7.22'
+    compileOnly 'net.portswigger.burp.extender:burp-extender-api:2.3'
     implementation 'com.github.CoreyD97:BurpExtenderUtilities:cd2b86250'
-    compileOnly 'com.formdev:flatlaf:1.1.2'
-    testRuntimeOnly files('/home/corey/BurpSuitePro/burpsuite_pro.jar')
+    compileOnly 'com.formdev:flatlaf:3.0'
+    //testRuntimeOnly files('/home/corey/BurpSuitePro/burpsuite_pro.jar')
 }
 
-jar {
-    baseName = project.name
-    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+jar{
+    archivesBaseName = project.name
+    from {
+        (configurations.runtimeClasspath).collect { it.isDirectory() ? it : zipTree(it) }
+    }{
+        exclude "META-INF/*.SF"
+        exclude "META-INF/*.DSA"
+        exclude "META-INF/*.RSA"
+        exclude "META-INF/*.txt"
+    }
 }
 
 configurations.all {
@@ -26,5 +33,5 @@ configurations.all {
 }
 
 tasks.withType(Jar) {
-    destinationDir = file("$rootDir/releases")
+    destinationDirectory = file("$rootDir/releases")
 }

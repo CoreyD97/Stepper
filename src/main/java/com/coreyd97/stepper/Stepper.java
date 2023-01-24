@@ -18,10 +18,10 @@ public class Stepper implements IBurpExtender {
     public static IBurpExtenderCallbacks callbacks;
     public static IGsonProvider gsonProvider = new DefaultGsonProvider();
     private static Preferences preferences;
+    private static SequenceManager sequenceManager;
 
     private StateManager stateManager;
     private MessageProcessor messageProcessor;
-    private SequenceManager sequenceManager;
 
     public Stepper(){
         Stepper.instance = this;
@@ -40,15 +40,21 @@ public class Stepper implements IBurpExtender {
         return instance;
     }
 
+    public static SequenceManager getSequenceManager(){
+        return sequenceManager;
+    }
+
     @Override
     public void registerExtenderCallbacks(IBurpExtenderCallbacks callbacks) {
         Stepper.callbacks = callbacks;
         Stepper.preferences = new StepperPreferenceFactory(Globals.EXTENSION_NAME, gsonProvider, callbacks).buildPreferences();
+
         this.sequenceManager = new SequenceManager();
         this.stateManager = new StateManager(sequenceManager, preferences);
         this.stateManager.loadSavedSequences();
         this.messageProcessor = new MessageProcessor(sequenceManager, preferences);
 
+        Stepper.callbacks.setExtensionName(Globals.EXTENSION_NAME);
         Stepper.callbacks.registerMessageEditorTabFactory(new VariableReplacementsTabFactory(sequenceManager));
         Stepper.callbacks.registerContextMenuFactory(new ContextMenuFactory(sequenceManager));
         Stepper.callbacks.registerHttpListener(messageProcessor);
