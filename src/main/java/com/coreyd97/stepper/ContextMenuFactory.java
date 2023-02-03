@@ -62,10 +62,40 @@ public class ContextMenuFactory implements IContextMenuFactory {
 
         menuItems.add(addStepMenu);
 
-
         if(invocation.getInvocationContext() == IContextMenuInvocation.CONTEXT_MESSAGE_EDITOR_REQUEST){
+            menuItems.addAll(buildCopyHeaderMenuItems(invocation));
             menuItems.addAll(buildVariableMenuItems(invocation));
         }
+        return menuItems;
+    }
+
+    private List<JMenuItem> buildCopyHeaderMenuItems(IContextMenuInvocation invocation){
+        List<JMenuItem> menuItems = new ArrayList<>();
+
+        JMenu addStepHeaderToClipboardMenu = new JMenu("Copy Header To Clipboard");
+
+        for (StepSequence stepSequence : sequenceManager.getSequences()) {
+            JMenu sequenceItem = new JMenu(stepSequence.getTitle());
+
+            JMenuItem execBeforeMenuItem = new JMenuItem("Execute-Before Header");
+            execBeforeMenuItem.addActionListener(actionEvent -> {
+                Toolkit.getDefaultToolkit().getSystemClipboard().setContents(
+                        new StringSelection(MessageProcessor.EXECUTE_BEFORE_HEADER+": " + stepSequence.getTitle()), null);
+            });
+            sequenceItem.add(execBeforeMenuItem);
+
+            JMenuItem execAfterMenuItem = new JMenuItem("Execute-After Header");
+            execAfterMenuItem.addActionListener(actionEvent -> {
+                Toolkit.getDefaultToolkit().getSystemClipboard().setContents(
+                        new StringSelection(MessageProcessor.EXECUTE_AFTER_HEADER+": " + stepSequence.getTitle()), null);
+            });
+            sequenceItem.add(execAfterMenuItem);
+
+            addStepHeaderToClipboardMenu.add(sequenceItem);
+        }
+
+        menuItems.add(addStepHeaderToClipboardMenu);
+
         return menuItems;
     }
 
@@ -92,8 +122,8 @@ public class ContextMenuFactory implements IContextMenuFactory {
         long varCount = sequenceVariableMap.values().stream().mapToInt(List::size).sum();
 
         if(varCount > 0) {
-            JMenu addStepVariableToClipboardMenu = new JMenu("Add Stepper Variable To Clipboard");
-            JMenuItem insertVariable = new JMenuItem("Insert Stepper Variable At Cursor (NOT POSSIBLE TO IMPLEMENT)");
+            JMenu addStepVariableToClipboardMenu = new JMenu("Copy Variable To Clipboard");
+            //JMenuItem insertVariable = new JMenuItem("Insert Stepper Variable At Cursor (NOT POSSIBLE TO IMPLEMENT)");
 
             if(isViewingSequenceStep){ //Only variables from a single sequence step
                 Collection<StepVariable> variables = sequenceVariableMap.values().stream()

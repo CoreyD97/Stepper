@@ -17,7 +17,7 @@ public class VariableCreationDialog extends JDialog {
 
     public VariableCreationDialog(Frame owner, String title, VariableType type){
         super(owner, title, true);
-
+        this.setLocation(owner.getLocation());
         buildDialog(type);
         pack();
     }
