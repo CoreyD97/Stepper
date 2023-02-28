@@ -1,6 +1,6 @@
 apply plugin: 'java'
 
-sourceCompatibility = 1.8
+sourceCompatibility = JavaVersion.VERSION_17
 
 repositories {
     mavenCentral()
@@ -11,13 +11,15 @@ repositories {
 
 dependencies {
     compileOnly 'net.portswigger.burp.extender:burp-extender-api:2.3'
-    implementation 'com.github.CoreyD97:BurpExtenderUtilities:cd2b86250'
+    implementation 'com.github.CoreyD97:BurpExtenderUtilities:c03c1a2a1'
     compileOnly 'com.formdev:flatlaf:3.0'
-    //testRuntimeOnly files('/home/corey/BurpSuitePro/burpsuite_pro.jar')
+    testRuntimeOnly files('/home/corey/BurpSuitePro/burpsuite_pro.jar')
 }
 
 jar{
     archivesBaseName = project.name
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
     from {
         (configurations.runtimeClasspath).collect { it.isDirectory() ? it : zipTree(it) }
     }{
@@ -33,5 +35,5 @@ configurations.all {
 }
 
 tasks.withType(Jar) {
-    destinationDirectory = file("$rootDir/releases")
+    destinationDir = file("$rootDir/releases")
 }
