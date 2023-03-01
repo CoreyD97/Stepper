@@ -160,8 +160,7 @@ public class AboutPanel extends JPanel {
                     "To solve this, you may define a sequence to carry out the steps to generate a token and " +
                     "extract its value into a variable. You could then include this variable into your request " +
                     "as usual, and add the headers ";
-            String stepExecutionUsageItalics = "\"X-Stepper-Execute-Before: SEQUENCENAME\"";
-            String stepExecutionUsageItalics = "\"X-Stepper-Execute-After: SEQUENCENAME\"";
+            String stepExecutionUsageItalics = "\"X-Stepper-Execute-Before: SEQUENCENAME\", \"X-Stepper-Execute-After: SEQUENCENAME\"";
             String stepExecutionUsageB = " to the request respectively. This will cause the sequence to be executed and variables " +
                     "to be updated every time the request is sent.";
 
