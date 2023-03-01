@@ -147,11 +147,12 @@ public class StepPanel extends JPanel implements StepVariableListener {
         });
 
         targetLabel = new JLabel(step.getTargetString());
+        targetLabel.setBorder(BorderFactory.createEmptyBorder(0,10,0,10));
 
         JSeparator horizontalSeparator = new JSeparator(JSeparator.HORIZONTAL);
         PanelBuilder panelBuilder = new PanelBuilder();
         panelBuilder.setComponentGrid(new Component[][]{
-                new Component[]{executeStepButton, new JLabel("Target: ", SwingConstants.TRAILING), targetLabel, editTargetButton},
+                new Component[]{executeStepButton, new JLabel("Target:", SwingConstants.TRAILING), targetLabel, editTargetButton},
                 new Component[]{horizontalSeparator, horizontalSeparator, horizontalSeparator, horizontalSeparator},
                 new Component[]{reqRespSplitPane, reqRespSplitPane, reqRespSplitPane, reqRespSplitPane},
         });
