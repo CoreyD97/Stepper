@@ -67,6 +67,4 @@ To use a variable in a request after it has been defined, either use the option 
 
 <b>$VAR:</b>VARIABLE_IDENTIFIER<b>$</b>
 
-
-**Future Plans:**  
-~* Allow steps to be reordered~
+Read more about Stepper and its usage in this blog: [Stepper (Burp Extender): Burp’s best extender for automating sequence of requests so far!](https://iamyuthan.medium.com/stepper-burps-best-sequence-automation-extender-so-far-complete-tutorial-review-aa30e023e5f6)
