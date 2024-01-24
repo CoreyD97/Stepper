@@ -80,7 +80,7 @@ public class MessageProcessor implements IHttpListener {
 
                     //Joining the sequences as string to set them as a comment to catch them in the response
                     String postExecSequencesJoined = EXECUTE_AFTER_HEADER + ":";
-                    for (StepSequence sequence : preExecSequences) {
+                    for (StepSequence sequence : postExecSequences) {
                         postExecSequencesJoined += sequence.getTitle() + EXECUTE_AFTER_COMMENT_DELIMITER;
                     }
 
