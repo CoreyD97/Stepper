@@ -108,7 +108,14 @@ public class Step implements IMessageEditorController {
     public StepExecutionInfo executeStep(List<StepVariable> replacements) throws SequenceExecutionException {
         byte[] requestWithoutReplacements = getRequest();
         byte[] builtRequest;
-
+        // Check if HOST/host Global variable is present if yes then update the target
+        for(StepVariable var : replacements) {
+            if (var.getIdentifier().contains("HOST") || var.getIdentifier().contains("host")) {
+                if(var.getValue() != null){
+                    this.setHostname(var.getValue());
+                }
+            }
+        }
         this.variableManager.updateVariablesBeforeExecution();
 
         for (StepExecutionListener executionListener : this.executionListeners) {
